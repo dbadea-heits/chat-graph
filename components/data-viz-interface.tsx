@@ -296,7 +296,7 @@ export default function DataVizInterface() {
             </Button>
           </div>
 
-          <GraphVisualization />
+          <GraphVisualization selectedNodeTypes={selectedNodeTypes} />
 
           {/* Graph Stats */}
           <Card className="absolute bottom-4 right-4 bg-slate-800/90 border-slate-600 backdrop-blur-sm">

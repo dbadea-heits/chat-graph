@@ -7,7 +7,11 @@ import { useNeo4jGraph } from "@/hooks/use-neo4j-graph";
 import { GraphNode, GraphEdge } from "@/types/graph";
 import { NODE_COLORS } from "@/constants/colors";
 
-export default function GraphVisualization() {
+interface GraphVisualizationProps {
+  selectedNodeTypes?: string[];
+}
+
+export default function GraphVisualization({ selectedNodeTypes = [] }: GraphVisualizationProps) {
   const { nodes, edges, searchQuery, isLoading, error } = useNeo4jGraph();
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -16,6 +20,19 @@ export default function GraphVisualization() {
   useEffect(() => {
     if (!containerRef.current || isLoading || error) return;
     if (nodes.length === 0 || edges.length === 0) return;
+
+    let filteredNodes = nodes;
+    let filteredEdges = edges;
+    if (selectedNodeTypes.length > 0) {
+      // Filter nodes based on selectedNodeTypes
+      filteredNodes = nodes.filter(node => selectedNodeTypes.includes(node.type))
+
+      // Filter edges to only show connections between visible nodes
+      const visibleNodeIds = filteredNodes.map(node => node.id);
+      filteredEdges = edges.filter(edge => 
+        visibleNodeIds.includes(edge.source.id) && visibleNodeIds.includes(edge.target.id)
+      );
+    }
 
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
@@ -34,8 +51,8 @@ export default function GraphVisualization() {
     svgRef.current = svg.node();
 
     // Create a simulation with forces
-    const simulation = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(edges).id((d: any) => d.id).distance(420))
+    const simulation = d3.forceSimulation(filteredNodes)
+      .force("link", d3.forceLink(filteredEdges).id((d: any) => d.id).distance(420))
       .force("charge", d3.forceManyBody().strength(-420))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collide", d3.forceCollide().radius(50));
@@ -43,7 +60,7 @@ export default function GraphVisualization() {
     // Add a group for the links
     const link = svg.append("g")
       .selectAll("line")
-      .data(edges)
+      .data(filteredEdges)
       .join("line")
       .attr("stroke", "#0569f4")
       .attr("stroke-width", 6);
@@ -51,7 +68,7 @@ export default function GraphVisualization() {
     // Add link labels
     const linkLabels = svg.append("g")
       .selectAll("text")
-      .data(edges)
+      .data(filteredEdges)
       .join("text")
       .text((d: any) => d.type)
       .attr("font-size", 10)
@@ -64,7 +81,7 @@ export default function GraphVisualization() {
     // Add a group for the nodes
     const node = svg.append("g")
       .selectAll("circle")
-      .data(nodes)
+      .data(filteredNodes)
       .join("circle")
       .attr("r", 20)
       .attr("fill", (d: any) => NODE_COLORS[d.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
@@ -83,7 +100,7 @@ export default function GraphVisualization() {
     // Add node labels with colored circles
     const nodeLabels = svg.append("g")
       .selectAll("g")
-      .data(nodes)
+      .data(filteredNodes)
       .join("g")
       .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
 
@@ -198,7 +215,7 @@ export default function GraphVisualization() {
       window.removeEventListener("resize", handleResize);
       simulation.stop();
     };
-  }, [nodes, edges, searchQuery, isLoading, error]);
+  }, [nodes, edges, searchQuery, isLoading, error, selectedNodeTypes]);
 
   return (
     <div className="h-full relative bg-slate-900">

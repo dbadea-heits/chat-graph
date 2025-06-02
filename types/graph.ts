@@ -9,8 +9,8 @@ export interface GraphNode {
 
 export interface GraphEdge {
   id: string;
-  source: string;
-  target: string;
+  source: GraphNode;
+  target: GraphNode;
   type: string;
   properties: Record<string, any>;
 }
