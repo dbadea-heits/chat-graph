@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@antv/g6": "^5.0.48",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
@@ -42,6 +41,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
+    "d3": "^7.9.0",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
@@ -62,6 +62,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -69,5 +70,6 @@
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@10.8.1+sha512.c50088ba998c67b8ca8c99df8a5e02fd2ae2e2b29aaf238feaa9e124248d3f48f9fb6db2424949ff901cffbb5e0f0cc1ad6aedb602cd29450751d11c35023677"
 }

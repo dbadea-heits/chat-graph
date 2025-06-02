@@ -9,6 +9,7 @@ import { Search, Filter, Maximize2, RefreshCw, HelpCircle } from "lucide-react"
 import GraphVisualization from "@/components/graph-visualization"
 import { useNeo4jGraph } from "@/hooks/use-neo4j-graph"
 import { GraphNode, GraphEdge } from "@/types/graph"
+import { NODE_COLORS } from "@/constants/colors"
 
 export default function DataVizInterface() {
   const { 
@@ -210,19 +211,6 @@ export default function DataVizInterface() {
                 </div>
               </div>
 
-              {/* Quick Search */}
-              <div className="mt-4">
-                <label className="text-sm font-medium text-slate-400 mb-2 block">Quick Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input
-                    value=""                    onChange={(e) => null}
-                    placeholder="Quick search..."
-                    className="pl-10 bg-slate-700 border-slate-600 text-slate-200 placeholder:text-slate-400"
-                  />
-                </div>
-              </div>
-
               {/* Query Examples */}
               <div className="mt-3">
                 <label className="text-xs font-medium text-slate-400 mb-1 block">Example Queries:</label>
@@ -260,7 +248,15 @@ export default function DataVizInterface() {
                     }`}
                     onClick={() => toggleNodeType(type)}
                   >
-                    {type}
+                    <div className="flex items-center gap-1.5">
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ 
+                          backgroundColor: NODE_COLORS[type.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280"
+                        }} 
+                      />
+                      {type}
+                    </div>
                   </Badge>
                 ))}
               </div>
@@ -276,51 +272,6 @@ export default function DataVizInterface() {
               Clear Filters
             </Button>
 
-            {/* Graph Stats */}
-            <Card className="bg-slate-700/50 border-slate-600">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-slate-200">Graph Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Nodes:</span>
-                  <span className="text-slate-100 font-medium">
-                    {filteredNodes.length} / {nodes.length}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Relationships:</span>
-                  <span className="text-slate-100 font-medium">
-                    {filteredEdges.length} / {edges.length}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Node Types:</span>
-                  <span className="text-slate-100 font-medium">{nodeTypes.length}</span>
-                </div>
-                {appliedQuery && (
-                  <div className="pt-2 border-t border-slate-600">
-                    <div className="text-xs text-slate-400 mb-1">Active Filter:</div>
-                    <div className="text-xs text-[#00828e] bg-[#00828e]/10 p-2 rounded border border-[#00828e]/30">
-                      {appliedQuery}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Neo4j Bloom Info */}
-            <Card className="bg-gradient-to-r from-[#9e58bd]/20 to-[#00828e]/20 border-slate-600">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-[#9e58bd]">Neo4j Bloom Integration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-slate-300">
-                  This visualization simulates Neo4j Bloom's graph exploration capabilities with interactive filtering
-                  and search.
-                </p>
-              </CardContent>
-            </Card>
           </div>
         </div>
 
@@ -346,6 +297,39 @@ export default function DataVizInterface() {
           </div>
 
           <GraphVisualization />
+
+          {/* Graph Stats */}
+          <Card className="absolute bottom-4 right-4 bg-slate-800/90 border-slate-600 backdrop-blur-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-slate-200">Graph Statistics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Nodes:</span>
+                <span className="text-slate-100 font-medium">
+                  {filteredNodes.length} / {nodes.length}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Relationships:</span>
+                <span className="text-slate-100 font-medium">
+                  {filteredEdges.length} / {edges.length}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Node Types:</span>
+                <span className="text-slate-100 font-medium">{nodeTypes.length}</span>
+              </div>
+              {appliedQuery && (
+                <div className="pt-2 border-t border-slate-600">
+                  <div className="text-xs text-slate-400 mb-1">Active Filter:</div>
+                  <div className="text-xs text-[#00828e] bg-[#00828e]/10 p-2 rounded border border-[#00828e]/30">
+                    {appliedQuery}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
