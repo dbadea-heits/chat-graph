@@ -59,7 +59,7 @@ export default function GraphVisualization() {
       .attr("text-anchor", "middle")
       .attr("dy", -5)
       .style("pointer-events", "none")
-      .style("visibility", "hidden");
+      // .style("visibility", "hidden");
       
     // Add a group for the nodes
     const node = svg.append("g")
@@ -87,19 +87,13 @@ export default function GraphVisualization() {
       .join("g")
       .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
 
-    // Add colored circles to labels
-    nodeLabels.append("circle")
-      .attr("r", 6)
-      .attr("fill", (d: any) => NODE_COLORS[d.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
-      .attr("cy", 35);
-
     // Add text labels
     nodeLabels.append("text")
       .text((d: any) => d.label)
       .attr("font-size", 12)
       .attr("fill", "#FFFFFF")
       .attr("text-anchor", "middle")
-      .attr("dy", 45)
+      .attr("dy", 35)
       .style("pointer-events", "none");
 
     // Add drag behavior
@@ -130,14 +124,14 @@ export default function GraphVisualization() {
     link.on("click", (event, d: any) => {
       event.stopPropagation();
       setSelected(d);
-      linkLabels.style("visibility", (l: any) => 
-        l === d ? "visible" : "hidden"
-      );
+      // linkLabels.style("visibility", (l: any) => 
+      //   l === d ? "visible" : "hidden"
+      // );
     });
 
     svg.on("click", () => {
       setSelected(null);
-      linkLabels.style("visibility", "hidden");
+      // linkLabels.style("visibility", "hidden");
     });
 
     // Add zoom behavior
@@ -149,6 +143,17 @@ export default function GraphVisualization() {
       });
 
     svg.call(zoom as any);
+
+    // Set initial zoom level and center the view
+    const initialScale = 0.07;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const transform = d3.zoomIdentity
+      .translate(centerX, centerY)
+      .scale(initialScale)
+      .translate(-centerX, -centerY);
+    
+    svg.call(zoom.transform as any, transform);
 
     // Update positions in each tick of the simulation
     simulation.on("tick", () => {
@@ -217,14 +222,6 @@ export default function GraphVisualization() {
           <CardContent className="p-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{
-                    backgroundColor: 'label' in selected 
-                      ? (NODE_COLORS[selected.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
-                      : "#6B7280",
-                  }}
-                />
                 <h3 className="font-semibold text-slate-100">
                   {'label' in selected ? selected.label : selected.type}
                 </h3>
