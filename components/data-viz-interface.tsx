@@ -16,10 +16,7 @@ export default function DataVizInterface() {
     nodes, 
     edges, 
     searchQuery: hookSearchQuery, 
-    setSearchQuery: setHookSearchQuery,
-    refreshData,
-    isLoading,
-    error 
+    setSearchQuery: setHookSearchQuery, 
   } = useNeo4jGraph()
   
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([])
@@ -27,6 +24,10 @@ export default function DataVizInterface() {
   const [filteredEdges, setFilteredEdges] = useState<GraphEdge[]>([])
   const [filterQuery, setFilterQuery] = useState("")
   const [appliedQuery, setAppliedQuery] = useState("")
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [loadingSymbol, setLoadingSymbol] = useState("◴");
+  const [currentStep, setCurrentStep] = useState("");
 
   // Set up filtering effect
   useEffect(() => {
@@ -85,66 +86,121 @@ export default function DataVizInterface() {
   // Filter graph data based on search, query, and selected types
   useEffect(() => {
     let filtered = nodes
+    let pollInterval: NodeJS.Timeout;
 
-    // Filter by quick search query
-    // if (searchQuery) {
-    //   filtered = filtered.filter(
-    //     (node) =>
-    //       node.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    //       node.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    //       Object.values(node.properties).some((value) =>
-    //         value.toString().toLowerCase().includes(searchQuery.toLowerCase()),
-    //       ),
-    //   )
-    // }
+    const pollJobStatus = async (jobId: string) => {
+      try {
+        const response = await fetch(`http://localhost:8000/job_status/${jobId}`);
+        const data = await response.json();
+        
+        if (data.status === "error") {
+          console.error("Job failed:", data.error);
+          setIsFiltering(false);
+          return;
+        }
 
-    // Filter by advanced query
-    if (appliedQuery) {
-      filtered = filtered.filter((node) => {
-        const query = appliedQuery.toLowerCase()
+        setProgress(data.progress);
+        setCurrentStep(data.current_step || "");
 
-        // Parse simple query patterns
-        if (query.includes("person") && query.includes("age >")) {
-          const ageMatch = query.match(/age\s*>\s*(\d+)/)
-          if (ageMatch && node.type === "Person") {
-            const targetAge = Number.parseInt(ageMatch[1])
-            return node.properties.age > targetAge
+        if (data.progress === 1) {
+          // Job is complete, update the filtered nodes and edges
+          if (data.result) {
+            console.log("Job completed, updating filtered nodes and edges");
+            
+            // Make API call to update Neo4j with the filtered graph
+            fetch("http://localhost:8000/update_neo4j", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                graph_path: data.result.graph_path
+              }),
+            })
+            .then(response => response.json())
+            .then(updateData => {
+              console.log("Neo4j update response:", updateData);
+              setCurrentStep("Updating Neo4j Graph");
+              // Refresh the graph data from Neo4j
+              setHookSearchQuery(hookSearchQuery + " "); // Trigger a refresh by slightly modifying the search query
+            })
+            .catch(error => {
+              console.error("Error updating Neo4j:", error);
+            })
+            .finally(() => {
+              setIsFiltering(false);
+              clearInterval(pollInterval);
+            });
           }
         }
-
-        if (query.includes("company") && query.includes("in technology")) {
-          return node.type === "Company" && node.properties.industry === "Technology"
+        else {
+          console.log("Job not complete, progress:", data.progress);
         }
+      } catch (error) {
+        console.error("Error polling job status:", error);
+        setIsFiltering(false);
+        clearInterval(pollInterval);
+      }
+    };
 
-        if (query.includes("project") && query.includes("status active")) {
-          return node.type === "Project" && node.properties.status === "Active"
+    const applyFilter = async () => {
+      try {
+        console.log("Applying filter:", appliedQuery);
+        setIsFiltering(true);
+        setProgress(0);
+
+        const response = await fetch("http://localhost:8000/filter_graph", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            input_text: appliedQuery,
+            graph_name: "filtered_graph"
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (data.job_id) {
+          // Start polling for job status
+          pollInterval = setInterval(() => pollJobStatus(data.job_id), 1000);
         }
+      } catch (error) {
+        console.error("Error applying filter:", error);
+        setIsFiltering(false);
+      }
+    };
 
-        if (query.includes("technology") && query.includes("popularity high")) {
-          return node.type === "Technology" && node.properties.popularity === "High"
-        }
-
-        // Fallback to general text search
-        return (
-          node.label.toLowerCase().includes(query) ||
-          node.type.toLowerCase().includes(query) ||
-          Object.values(node.properties).some((value) => value.toString().toLowerCase().includes(query))
-        )
-      })
+    if (appliedQuery) {
+      applyFilter();
+    } else {
+      console.log("No query, showing all nodes");
+      // TODO: Update the filtered nodes and edges with the new data
     }
 
-    // Filter by selected node types
-    if (selectedNodeTypes.length > 0) {
-      filtered = filtered.filter((node) => selectedNodeTypes.includes(node.type))
-    }
+    // Cleanup function to clear interval
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [appliedQuery]);
 
-    setFilteredNodes(filtered)
+  // Animate loading symbol
+  useEffect(() => {
+    if (!isFiltering) return;
+    
+    const symbols = ["◴", "◷", "◶", "◵"];
+    let currentIndex = 0;
+    
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % symbols.length;
+      setLoadingSymbol(symbols[currentIndex]);
+    }, 400);
 
-    // Filter edges to only show connections between visible nodes
-    const visibleNodeIds = new Set(filtered.map((node) => node.id))
-    const filteredEdgeList = edges.filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target))
-    setFilteredEdges(filteredEdgeList)
-  }, [appliedQuery, selectedNodeTypes, nodes, edges])
+    return () => clearInterval(interval);
+  }, [isFiltering]);
 
   const toggleNodeType = (type: string) => {
     setSelectedNodeTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]))
@@ -288,6 +344,26 @@ export default function DataVizInterface() {
               Fullscreen
             </Button>
           </div>
+
+          {/* Loading Overlay */}
+          {isFiltering && (
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+              <div className="w-64 space-y-4">
+                <div className="text-slate-200 text-center">
+                  {loadingSymbol} {currentStep || "Initializing"}
+                </div>
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div 
+                    className="bg-[#9e58bd] h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </div>
+                <div className="text-slate-400 text-sm text-center">
+                  {Math.round(progress * 100)}% complete
+                </div>
+              </div>
+            </div>
+          )}
 
           <GraphVisualization selectedNodeTypes={selectedNodeTypes} />
 
