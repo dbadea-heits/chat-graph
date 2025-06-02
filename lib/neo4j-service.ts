@@ -92,8 +92,6 @@ class Neo4jService {
         MATCH (n)
         RETURN n
       `);
-
-      console.log('Nodes result:', nodesResult.records);
       
       const nodes: GraphNode[] = nodesResult.records.map(record => 
         this.nodeToGraphNode(record)

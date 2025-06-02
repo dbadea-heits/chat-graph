@@ -18,8 +18,8 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       {/* Header */}
       <div className="p-4 border-b border-slate-700">
         <div className="flex items-center gap-2 mb-4">
-          <Menu className="w-5 h-5 text-[#9e58bd]" />
-          <h1 className="text-xl font-bold text-[#9e58bd]">T3.chat</h1>
+          {/* <Menu className="w-5 h-5 text-[#9e58bd]" /> */}
+          <h1 className="text-xl font-bold text-[#9e58bd]">✨ The Brain Builder ✨</h1>
         </div>
 
         <Button
@@ -27,7 +27,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           onClick={() => setActiveTab("chat")}
         >
           <Plus className="w-4 h-4 mr-2" />
-          New Chat
+          New Brain
         </Button>
       </div>
 
@@ -77,12 +77,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
           <div className="pt-4">
             <div className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Help</div>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-slate-300 hover:bg-slate-700/50 hover:text-slate-200"
-            >
-              Welcome to T3 Chat
-            </Button>
             <Button
               variant="ghost"
               className="w-full justify-start text-slate-300 hover:bg-slate-700/50 hover:text-slate-200"

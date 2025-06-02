@@ -64,7 +64,7 @@ export default function ChatTab() {
     }
 
     if (input.includes("neo4j") || input.includes("bloom")) {
-      return "Neo4j Bloom provides powerful graph visualization capabilities. In our Data Visualization tab, you can explore nodes, relationships, and use advanced filtering to understand your data better."
+      return "Filter and explore your AI's knowledge base."
     }
 
     return "That's interesting! I can help you with graph data queries and visualization. Try switching to the Data Visualization tab to explore the interactive graph."

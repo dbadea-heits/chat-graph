@@ -162,15 +162,8 @@ export default function DataVizInterface() {
       <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-800/50">
         <div>
           <h2 className="text-lg font-semibold text-slate-100">Data Visualization</h2>
-          <p className="text-sm text-slate-400">Neo4j Bloom-style graph exploration and filtering</p>
+          <p className="text-sm text-slate-400">Filter and explore your AI's knowledge base.</p>
         </div>
-        <Button
-          variant="outline"
-          className="border-slate-600 text-[#00828e] hover:bg-[#00828e]/10 hover:border-[#00828e]"
-        >
-          <HelpCircle className="w-4 h-4 mr-2" />
-          Graph Help
-        </Button>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -184,7 +177,7 @@ export default function DataVizInterface() {
                 <textarea
                   value={filterQuery}
                   onChange={(e) => setFilterQuery(e.target.value)}
-                  placeholder="Enter filter query (e.g., 'Person with role Developer' or 'Company in Technology')"
+                  placeholder="Enter a query to filter your knowledge base (e.g. 'Ethics Application')"
                   className="w-full h-20 p-3 bg-slate-700 border border-slate-600 text-slate-200 placeholder:text-slate-400 rounded-md resize-none text-sm"
                   rows={3}
                 />
@@ -216,10 +209,10 @@ export default function DataVizInterface() {
                 <label className="text-xs font-medium text-slate-400 mb-1 block">Example Queries:</label>
                 <div className="space-y-1">
                   {[
-                    "Person with age > 30",
-                    "Company in Technology",
-                    "Project with status Active",
-                    "Technology with popularity High",
+                    "How critical thinking affects ethics.",
+                    "What makes a good critical thinker.",
+                    "Compare right action vs virtue theory.",
+                    "Compare old and new virtue theory views.",
                   ].map((example, index) => (
                     <button
                       key={index}
