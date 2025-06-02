@@ -1,0 +1,50 @@
+/* 
+  Node and edge type styles for the graph visualization 
+*/
+
+.node-circle {
+  border-radius: 9999px;
+}
+
+.node-circle-small {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+}
+
+.node-circle-medium {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+}
+
+.edge-indicator {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #60a5fa;
+}
+
+/* Node type colors */
+.node-color-Person {
+  background-color: #9e58bd;
+}
+
+.node-color-Company {
+  background-color: #00828e;
+}
+
+.node-color-Project {
+  background-color: #f59e0b;
+}
+
+.node-color-Technology {
+  background-color: #1c005f;
+}
+
+.node-color-Team {
+  background-color: #ef4444;
+}
+
+.node-color-default {
+  background-color: #6B7280;
+}
