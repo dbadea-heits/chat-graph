@@ -118,52 +118,67 @@ class Neo4jService {
   }
 
   // Process Neo4j data into graph format
-  private processNeo4jData(data: any): { nodes: GraphNode[], edges: GraphEdge[] } {
+  private async processNeo4jData(data: any): Promise<{ nodes: GraphNode[], edges: GraphEdge[] }> {
     console.log("Progress - processing neo4j data");
     const nodes = new Map<string, GraphNode>();
     const edges: GraphEdge[] = [];
     const nodeTypes = new Set<string>();
 
-    data.results[0].data.forEach((row: any) => {
-      // Process nodes
-      if (row.graph.nodes) {
-        row.graph.nodes.forEach((node: any) => {
-          if (!nodes.has(node.id)) {
-            const type = node.labels[0];
-            nodeTypes.add(type);
-            nodes.set(node.id, {
-              id: node.id,
-              label: node.properties.displayName || node.id,
-              type: type,
-              properties: node.properties,
-              x: 0,
-              y: 0
-            });
-          }
-        });
-      }
+    // Split data into chunks for parallel processing
+    const rows = data.results[0].data;
+    const chunkSize = Math.ceil(rows.length / 4);
+    const chunks = [];
+    
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      chunks.push(rows.slice(i, i + chunkSize));
+    }
 
-      // Process relationships
-      if (row.graph.relationships) {
-        row.graph.relationships.forEach((rel: any) => {
-          edges.push({
-            id: rel.id,
-            source: rel.startNode,
-            target: rel.endNode,
-            type: rel.type,
-            properties: rel.properties
-          });
-        });
-      }
+    // Process chunks in parallel using workers
+    const workerPromises = chunks.map(chunk => {
+      return new Promise<{ nodesData: any[], edgesData: any[] }>((resolve, reject) => {
+        const worker = new Worker(new URL('./neo4j-worker.ts', import.meta.url));
+
+        worker.onmessage = (e) => {
+          resolve(e.data);
+          worker.terminate();
+        };
+
+        worker.onerror = (error) => {
+          console.error('Worker error:', error);
+          reject(error);
+          worker.terminate();
+        };
+
+        worker.postMessage(chunk);
+      });
     });
 
-    // Position nodes based on their connections
-    this.assignNodePositions(Array.from(nodes.values()), edges);
+    try {
+      // Wait for all workers to complete
+      const results = await Promise.all(workerPromises);
+      
+      // Combine results from all workers
+      results.forEach(result => {
+        result.nodesData.forEach((n: any) => {
+          if (!nodes.has(n.id)) {
+            nodeTypes.add(n.type);
+            nodes.set(n.id, n);
+          }
+        });
+        edges.push(...result.edgesData);
+      });
 
-    return {
-      nodes: Array.from(nodes.values()),
-      edges: edges
-    };
+      // Position nodes based on their connections
+      // this.assignNodePositions(Array.from(nodes.values()), edges);
+
+      return {
+        nodes: Array.from(nodes.values()),
+        edges: edges
+      };
+    } catch (error) {
+      console.error('Error processing data with workers:', error);
+      throw error;
+    }
   }
 
   // Convert Neo4j data directly to D3 format
@@ -521,7 +536,7 @@ class Neo4jService {
       const allNodes = Array.from(allNodesMap.values());
       
       // Position nodes based on their connections
-      this.assignNodePositions(allNodes, edges);
+      // this.assignNodePositions(allNodes, edges);
       
       return { 
         nodes: allNodes,
