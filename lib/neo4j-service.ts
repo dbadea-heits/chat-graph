@@ -115,8 +115,8 @@ class Neo4jService {
     }
   }
 
-  // Convert Neo4j data directly to G6 format
-  async getG6GraphData(searchQuery: string = ''): Promise<{ nodes: any[], edges: any[] }> {
+  // Convert Neo4j data directly to D3 format
+  async getD3GraphData(searchQuery: string = ''): Promise<{ nodes: any[], edges: any[] }> {
     const { nodes, edges } = await (searchQuery ? this.searchGraph(searchQuery) : this.getGraphData());
     
     // Generate random colors for each unique node type
@@ -131,8 +131,8 @@ class Neo4jService {
       typeColors.set(type, `hsl(${hue}, ${saturation}%, ${lightness}%)`);
     });
 
-    // Format nodes for G6
-    const g6Nodes = nodes.map(node => ({
+    // Format nodes for D3
+    const d3Nodes = nodes.map(node => ({
       id: node.id,
       data: {
         label: node.properties.displayName,
@@ -162,8 +162,8 @@ class Neo4jService {
       },
     }));
 
-    // Format edges for G6
-    const g6Edges = edges.map(edge => ({
+    // Format edges for D3
+    const d3Edges = edges.map(edge => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
@@ -187,8 +187,8 @@ class Neo4jService {
     }));
 
     return {
-      nodes: g6Nodes,
-      edges: g6Edges
+      nodes: d3Nodes,
+      edges: d3Edges
     };
   }
 

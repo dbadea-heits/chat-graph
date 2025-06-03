@@ -3,36 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import * as d3 from "d3";
-import { useNeo4jGraph } from "@/hooks/use-neo4j-graph";
 import { GraphNode, GraphEdge } from "@/types/graph";
 import { NODE_COLORS } from "@/constants/colors";
 
 interface GraphVisualizationProps {
-  selectedNodeTypes?: string[];
+  nodes: GraphNode[];
+  edges: GraphEdge[];
 }
 
-export default function GraphVisualization({ selectedNodeTypes = [] }: GraphVisualizationProps) {
-  const { nodes, edges, searchQuery, isLoading, error } = useNeo4jGraph();
+export default function GraphVisualization({ nodes, edges}: GraphVisualizationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [selected, setSelected] = useState<GraphNode | GraphEdge | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current || isLoading || error) return;
-    if (nodes.length === 0 || edges.length === 0) return;
-
-    let filteredNodes = nodes;
-    let filteredEdges = edges;
-    if (selectedNodeTypes.length > 0) {
-      // Filter nodes based on selectedNodeTypes
-      filteredNodes = nodes.filter(node => selectedNodeTypes.includes(node.type))
-
-      // Filter edges to only show connections between visible nodes
-      const visibleNodeIds = filteredNodes.map(node => node.id);
-      filteredEdges = edges.filter(edge => 
-        visibleNodeIds.includes(edge.source.id) && visibleNodeIds.includes(edge.target.id)
-      );
-    }
+    if (!containerRef.current) return;
 
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
@@ -51,8 +36,8 @@ export default function GraphVisualization({ selectedNodeTypes = [] }: GraphVisu
     svgRef.current = svg.node();
 
     // Create a simulation with forces
-    const simulation = d3.forceSimulation(filteredNodes)
-      .force("link", d3.forceLink(filteredEdges).id((d: any) => d.id).distance(420))
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(edges).id((d: any) => d.id).distance(420))
       .force("charge", d3.forceManyBody().strength(-420))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collide", d3.forceCollide().radius(50));
@@ -60,7 +45,7 @@ export default function GraphVisualization({ selectedNodeTypes = [] }: GraphVisu
     // Add a group for the links
     const link = svg.append("g")
       .selectAll("line")
-      .data(filteredEdges)
+      .data(edges)
       .join("line")
       .attr("stroke", "#0569f4")
       .attr("stroke-width", 6);
@@ -68,39 +53,30 @@ export default function GraphVisualization({ selectedNodeTypes = [] }: GraphVisu
     // Add link labels
     const linkLabels = svg.append("g")
       .selectAll("text")
-      .data(filteredEdges)
+      .data(edges)
       .join("text")
       .text((d: any) => d.type)
       .attr("font-size", 10)
       .attr("fill", "#94A3B8") // Light Gray
       .attr("text-anchor", "middle")
       .attr("dy", -5)
-      .style("pointer-events", "none")
-      // .style("visibility", "hidden");
+      .style("pointer-events", "none");
       
     // Add a group for the nodes
     const node = svg.append("g")
       .selectAll("circle")
-      .data(filteredNodes)
+      .data(nodes)
       .join("circle")
       .attr("r", 20)
       .attr("fill", (d: any) => NODE_COLORS[d.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
-      .style("cursor", "pointer")
-      .style("filter", (d: any) => {
-        if (searchQuery && 
-            (d.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             d.type.toLowerCase().includes(searchQuery.toLowerCase()))) {
-          return "drop-shadow(0 0 10px #FBBF24)";
-        }
-        return "none";
-      });
+      .style("cursor", "pointer");
       
     // Add node labels with colored circles
     const nodeLabels = svg.append("g")
       .selectAll("g")
-      .data(filteredNodes)
+      .data(nodes)
       .join("g")
       .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
 
@@ -141,14 +117,10 @@ export default function GraphVisualization({ selectedNodeTypes = [] }: GraphVisu
     link.on("click", (event, d: any) => {
       event.stopPropagation();
       setSelected(d);
-      // linkLabels.style("visibility", (l: any) => 
-      //   l === d ? "visible" : "hidden"
-      // );
     });
 
     svg.on("click", () => {
       setSelected(null);
-      // linkLabels.style("visibility", "hidden");
     });
 
     // Add zoom behavior
@@ -215,22 +187,10 @@ export default function GraphVisualization({ selectedNodeTypes = [] }: GraphVisu
       window.removeEventListener("resize", handleResize);
       simulation.stop();
     };
-  }, [nodes, edges, searchQuery, isLoading, error, selectedNodeTypes]);
+  }, [nodes, edges]);
 
   return (
     <div className="h-full relative bg-slate-900">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-white">Loading graph data...</div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-red-500">{error}</div>
-        </div>
-      )}
-      
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Node Details Panel */}

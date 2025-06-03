@@ -1,13 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, Filter, Maximize2, RefreshCw } from "lucide-react"
 import GraphVisualization from "@/components/graph-visualization"
 import { useNeo4jGraph } from "@/hooks/use-neo4j-graph"
-import { GraphNode, GraphEdge } from "@/types/graph"
 import { NODE_COLORS } from "@/constants/colors"
 import { apiConfig } from "@/lib/api-config"
 
@@ -15,13 +14,10 @@ export default function DataVizInterface() {
   const { 
     nodes, 
     edges, 
-    searchQuery: hookSearchQuery, 
-    setSearchQuery: setHookSearchQuery, 
+    refreshData: refreshHookData,
   } = useNeo4jGraph()
   
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([])
-  const [filteredNodes, setFilteredNodes] = useState<GraphNode[]>([])
-  const [filteredEdges, setFilteredEdges] = useState<GraphEdge[]>([])
   const [filterQuery, setFilterQuery] = useState("")
   const [appliedQuery, setAppliedQuery] = useState("")
   const [isFiltering, setIsFiltering] = useState(false);
@@ -29,63 +25,29 @@ export default function DataVizInterface() {
   const [loadingSymbol, setLoadingSymbol] = useState("◴");
   const [currentStep, setCurrentStep] = useState("");
 
-  // Set up filtering effect
-  useEffect(() => {
-    // Initialize filtered data with all nodes/edges when they change
-    setFilteredNodes(nodes);
-    setFilteredEdges(edges);
-  }, [nodes, edges]);
-
-  // Apply filtering when filter parameters change
-  useEffect(() => {
-    if (nodes.length === 0) return;
-    
-    // Apply type filtering
-    let filteredNodeList = nodes;
-    if (selectedNodeTypes.length > 0) {
-      filteredNodeList = nodes.filter((node) => selectedNodeTypes.includes(node.type));
-    }
-    
-    // Apply query filtering if needed
-    if (appliedQuery) {
-      try {
-        const query = appliedQuery.toLowerCase();
-        
-        // Simple query parser (this could be more sophisticated)
-        if (query.includes(' with ')) {
-          const [nodeType, propertyFilter] = query.split(' with ');
-          const [property, value] = propertyFilter.split(' ');
-          
-          filteredNodeList = filteredNodeList.filter(
-            (node) => 
-              node.type.toLowerCase() === nodeType && 
-              node.properties[property] && 
-              String(node.properties[property]).toLowerCase().includes(value)
-          );
-        } else {
-          // Basic text search in all properties
-          filteredNodeList = filteredNodeList.filter((node) => {
-            return (
-              node.label.toLowerCase().includes(query) ||
-              node.type.toLowerCase().includes(query) ||
-              Object.entries(node.properties).some(
-                ([key, value]) => String(value).toLowerCase().includes(query)
-              )
-            );
-          });
-        }
-      } catch (e) {
-        console.error("Filter query parsing error:", e);
-      }
-    }
-  }, [])
-
   // Get unique node types for filtering
   const nodeTypes = Array.from(new Set(nodes.map((node) => node.type)))
 
+  // Filter nodes and edges based on selected types
+  const { filteredNodes, filteredEdges } = useMemo(() => {
+    if (nodes.length === 0 || edges.length === 0) return { filteredNodes: [], filteredEdges: [] };
+
+    const filteredNodes = selectedNodeTypes.length > 0
+      ? nodes.filter(node => selectedNodeTypes.includes(node.type))
+      : nodes;
+
+    const filteredEdges = selectedNodeTypes.length > 0
+      ? edges.filter(edge => 
+          filteredNodes.some(node => node.id === edge.source.id) && 
+          filteredNodes.some(node => node.id === edge.target.id)
+        )
+      : edges;
+
+    return { filteredNodes, filteredEdges };
+  }, [nodes, edges, selectedNodeTypes]);
+
   // Filter graph data based on search, query, and selected types
   useEffect(() => {
-    let filtered = nodes
     let pollInterval: NodeJS.Timeout;
 
     const pollJobStatus = async (jobId: string) => {
@@ -122,7 +84,7 @@ export default function DataVizInterface() {
               console.log("Neo4j update response:", updateData);
               setCurrentStep("Updating Neo4j Graph");
               // Refresh the graph data from Neo4j
-              setHookSearchQuery(hookSearchQuery + " "); // Trigger a refresh by slightly modifying the search query
+              refreshHookData();
             })
             .catch(error => {
               console.error("Error updating Neo4j:", error);
@@ -176,7 +138,6 @@ export default function DataVizInterface() {
       applyFilter();
     } else {
       console.log("No query, showing all nodes");
-      // TODO: Update the filtered nodes and edges with the new data
     }
 
     // Cleanup function to clear interval
@@ -365,7 +326,10 @@ export default function DataVizInterface() {
             </div>
           )}
 
-          <GraphVisualization selectedNodeTypes={selectedNodeTypes} />
+          <GraphVisualization 
+            nodes={filteredNodes}
+            edges={filteredEdges}
+          />
 
           {/* Graph Stats */}
           <Card className="absolute bottom-4 right-4 bg-slate-800/90 border-slate-600 backdrop-blur-sm">
@@ -387,7 +351,7 @@ export default function DataVizInterface() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Node Types:</span>
-                <span className="text-slate-100 font-medium">{nodeTypes.length}</span>
+                <span className="text-slate-100 font-medium">{selectedNodeTypes.length}</span>
               </div>
               {appliedQuery && (
                 <div className="pt-2 border-t border-slate-600">

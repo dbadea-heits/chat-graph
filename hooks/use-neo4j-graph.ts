@@ -5,7 +5,7 @@ import { GraphNode, GraphEdge } from '@/types/graph';
 interface UseNeo4jGraphResult {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  g6Data: { nodes: any[], edges: any[] };
+  d3Data: { nodes: any[], edges: any[] };
   isLoading: boolean;
   error: string | null;
   searchQuery: string;
@@ -16,7 +16,7 @@ interface UseNeo4jGraphResult {
 export function useNeo4jGraph(): UseNeo4jGraphResult {
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [edges, setEdges] = useState<GraphEdge[]>([]);
-  const [g6Data, setG6Data] = useState<{ nodes: any[], edges: any[] }>({ nodes: [], edges: [] });
+  const [d3Data, setD3Data] = useState<{ nodes: any[], edges: any[] }>({ nodes: [], edges: [] });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -59,9 +59,9 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
         setNodes(data.nodes);
         setEdges(data.edges);
         
-        // Get G6 formatted data
-        const g6FormattedData = await neo4jService.getG6GraphData(searchQuery);
-        setG6Data(g6FormattedData);
+        // Get D3 formatted data
+        const d3FormattedData = await neo4jService.getD3GraphData(searchQuery);
+        setD3Data(d3FormattedData);
       } catch (err) {
         console.error('Error fetching graph data:', err);
         setError('Failed to fetch graph data from Neo4j');
@@ -95,9 +95,9 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
       setNodes(data.nodes);
       setEdges(data.edges);
       
-      // Get G6 formatted data
-      const g6FormattedData = await neo4jService.getG6GraphData(searchQuery);
-      setG6Data(g6FormattedData);
+      // Get D3 formatted data
+      const d3FormattedData = await neo4jService.getD3GraphData(searchQuery);
+      setD3Data(d3FormattedData);
     } catch (err) {
       console.error('Error refreshing graph data:', err);
       setError('Failed to refresh graph data from Neo4j');
@@ -109,7 +109,7 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
   return {
     nodes,
     edges,
-    g6Data,
+    d3Data,
     isLoading,
     error,
     searchQuery,
