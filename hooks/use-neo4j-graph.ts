@@ -10,7 +10,7 @@ interface UseNeo4jGraphResult {
   error: string | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  refreshData: () => Promise<void>;
+  refreshData: (graphId?: string) => Promise<void>;
 }
 
 export function useNeo4jGraph(): UseNeo4jGraphResult {
@@ -74,7 +74,7 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
   }, [searchQuery, isConnected]);
 
   // Function to manually refresh data
-  const refreshData = async () => {
+  const refreshData = async (graphId?: string) => {
     if (!isConnected) {
       try {
         await neo4jService.connect();
@@ -91,7 +91,7 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
     
     try {
       // Get raw graph data
-      const data = await neo4jService.searchGraph(searchQuery);
+      const data = await neo4jService.getGraphData(graphId);
       setNodes(data.nodes);
       setEdges(data.edges);
       

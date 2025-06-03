@@ -24,6 +24,7 @@ export default function DataVizInterface() {
   const [progress, setProgress] = useState(0);
   const [loadingSymbol, setLoadingSymbol] = useState("◴");
   const [currentStep, setCurrentStep] = useState("");
+  const [showWarning, setShowWarning] = useState(false);
 
   // Get unique node types for filtering
   const nodeTypes = Array.from(new Set(nodes.map((node) => node.type)))
@@ -69,6 +70,14 @@ export default function DataVizInterface() {
           if (data.result) {
             console.log("Job completed, updating filtered nodes and edges");
             
+            if (data.result.entity_count === 0) {
+              setShowWarning(true);
+              setIsFiltering(false);
+              clearInterval(pollInterval);
+              clearFilters();
+              return;
+            }
+            
             // Make API call to update Neo4j with the filtered graph
             fetch(`${apiConfig.baseUrl}${apiConfig.updateNeo4jEndpoint}`, {
               method: "POST",
@@ -76,15 +85,16 @@ export default function DataVizInterface() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                graph_path: data.result.graph_path
+                graph_path: data.result.graph_path,
+                clear_existing: true
               }),
             })
             .then(response => response.json())
             .then(updateData => {
               console.log("Neo4j update response:", updateData);
               setCurrentStep("Updating Neo4j Graph");
-              // Refresh the graph data from Neo4j
-              refreshHookData();
+              // Refresh the graph data from Neo4j with the new graph_id
+              refreshHookData(updateData.graph_id);
             })
             .catch(error => {
               console.error("Error updating Neo4j:", error);
@@ -322,6 +332,24 @@ export default function DataVizInterface() {
                 <div className="text-slate-400 text-sm text-center">
                   {Math.round(progress * 100)}% complete
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Warning Message */}
+          {showWarning && (
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+              <div className="w-96 p-6 bg-slate-800 rounded-lg border border-yellow-500/50">
+                <h3 className="text-lg font-semibold text-yellow-400 mb-2">No Results Found</h3>
+                <p className="text-slate-300 mb-4">
+                  Your query appears to be outside the scope of the current knowledge graph. Try modifying your search terms or exploring different aspects of the graph.
+                </p>
+                <Button
+                  onClick={() => setShowWarning(false)}
+                  className="w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/50"
+                >
+                  Dismiss
+                </Button>
               </div>
             </div>
           )}

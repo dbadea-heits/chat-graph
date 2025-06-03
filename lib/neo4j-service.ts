@@ -82,16 +82,16 @@ class Neo4jService {
   }
 
   // Get all nodes and relationships from the database
-  async getGraphData(): Promise<{ nodes: GraphNode[], edges: GraphEdge[] }> {
+  async getGraphData(graphId?: string): Promise<{ nodes: GraphNode[], edges: GraphEdge[] }> {
     await this.connect();
     const session = this.getSession();
     
     try {
       // Get all nodes
       const nodesResult = await session.run(`
-        MATCH (n)
+        MATCH (n${graphId ? ' {graph_id: $graphId}' : ''})
         RETURN n
-      `);
+      `, graphId ? { graphId } : {});
       
       const nodes: GraphNode[] = nodesResult.records.map(record => 
         this.nodeToGraphNode(record)
@@ -99,9 +99,9 @@ class Neo4jService {
       
       // Get all relationships
       const edgesResult = await session.run(`
-        MATCH (source)-[r]->(target)
+        MATCH (source${graphId ? ' {graph_id: $graphId}' : ''})-[r]->(target${graphId ? ' {graph_id: $graphId}' : ''})
         RETURN source, r, target
-      `);
+      `, graphId ? { graphId } : {});
       const edges: GraphEdge[] = edgesResult.records.map(record => 
         this.relationToGraphEdge(record)
       );
