@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, Maximize2, RefreshCw, HelpCircle } from "lucide-react"
+import { Search, Filter, Maximize2, RefreshCw } from "lucide-react"
 import GraphVisualization from "@/components/graph-visualization"
 import { useNeo4jGraph } from "@/hooks/use-neo4j-graph"
 import { GraphNode, GraphEdge } from "@/types/graph"
 import { NODE_COLORS } from "@/constants/colors"
+import { apiConfig } from "@/lib/api-config"
 
 export default function DataVizInterface() {
   const { 
@@ -90,9 +90,9 @@ export default function DataVizInterface() {
 
     const pollJobStatus = async (jobId: string) => {
       try {
-        const response = await fetch(`http://localhost:8000/job_status/${jobId}`);
+        const response = await fetch(`${apiConfig.baseUrl}${apiConfig.jobStatusEndpoint}/${jobId}`);
         const data = await response.json();
-        
+
         if (data.status === "error") {
           console.error("Job failed:", data.error);
           setIsFiltering(false);
@@ -108,7 +108,7 @@ export default function DataVizInterface() {
             console.log("Job completed, updating filtered nodes and edges");
             
             // Make API call to update Neo4j with the filtered graph
-            fetch("http://localhost:8000/update_neo4j", {
+            fetch(`${apiConfig.baseUrl}${apiConfig.updateNeo4jEndpoint}`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -149,7 +149,7 @@ export default function DataVizInterface() {
         setIsFiltering(true);
         setProgress(0);
 
-        const response = await fetch("http://localhost:8000/filter_graph", {
+        const response = await fetch(`${apiConfig.baseUrl}${apiConfig.filterGraphEndpoint}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
