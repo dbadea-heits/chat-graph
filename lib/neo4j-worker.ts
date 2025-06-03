@@ -10,9 +10,7 @@ self.onmessage = (e) => {
             id: node.id,
             label: node.properties.displayName || node.id,
             type: node.labels[0],
-            properties: node.properties,
-            x: 0,
-            y: 0
+            properties: node.properties
           });
         });
       }
