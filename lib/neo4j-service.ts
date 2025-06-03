@@ -82,18 +82,16 @@ class Neo4jService {
   }
 
   // Get all nodes and relationships from the database
-  async getGraphData(): Promise<{ nodes: GraphNode[], edges: GraphEdge[] }> {
+  async getGraphData(graphId?: string): Promise<{ nodes: GraphNode[], edges: GraphEdge[] }> {
     await this.connect();
     const session = this.getSession();
     
     try {
       // Get all nodes
       const nodesResult = await session.run(`
-        MATCH (n)
+        MATCH (n${graphId ? ' {graph_id: $graphId}' : ''})
         RETURN n
-      `);
-
-      console.log('Nodes result:', nodesResult.records);
+      `, graphId ? { graphId } : {});
       
       const nodes: GraphNode[] = nodesResult.records.map(record => 
         this.nodeToGraphNode(record)
@@ -101,9 +99,9 @@ class Neo4jService {
       
       // Get all relationships
       const edgesResult = await session.run(`
-        MATCH (source)-[r]->(target)
+        MATCH (source${graphId ? ' {graph_id: $graphId}' : ''})-[r]->(target${graphId ? ' {graph_id: $graphId}' : ''})
         RETURN source, r, target
-      `);
+      `, graphId ? { graphId } : {});
       const edges: GraphEdge[] = edgesResult.records.map(record => 
         this.relationToGraphEdge(record)
       );
@@ -117,8 +115,8 @@ class Neo4jService {
     }
   }
 
-  // Convert Neo4j data directly to G6 format
-  async getG6GraphData(searchQuery: string = ''): Promise<{ nodes: any[], edges: any[] }> {
+  // Convert Neo4j data directly to D3 format
+  async getD3GraphData(searchQuery: string = ''): Promise<{ nodes: any[], edges: any[] }> {
     const { nodes, edges } = await (searchQuery ? this.searchGraph(searchQuery) : this.getGraphData());
     
     // Generate random colors for each unique node type
@@ -133,8 +131,8 @@ class Neo4jService {
       typeColors.set(type, `hsl(${hue}, ${saturation}%, ${lightness}%)`);
     });
 
-    // Format nodes for G6
-    const g6Nodes = nodes.map(node => ({
+    // Format nodes for D3
+    const d3Nodes = nodes.map(node => ({
       id: node.id,
       data: {
         label: node.properties.displayName,
@@ -164,8 +162,8 @@ class Neo4jService {
       },
     }));
 
-    // Format edges for G6
-    const g6Edges = edges.map(edge => ({
+    // Format edges for D3
+    const d3Edges = edges.map(edge => ({
       id: edge.id,
       source: edge.source,
       target: edge.target,
@@ -189,8 +187,8 @@ class Neo4jService {
     }));
 
     return {
-      nodes: g6Nodes,
-      edges: g6Edges
+      nodes: d3Nodes,
+      edges: d3Edges
     };
   }
 
@@ -209,18 +207,18 @@ class Neo4jService {
     // Count connections for each node
     edges.forEach(edge => {
       // Increment degree for source and target
-      nodeDegrees.set(edge.source, (nodeDegrees.get(edge.source) || 0) + 1);
-      nodeDegrees.set(edge.target, (nodeDegrees.get(edge.target) || 0) + 1);
+      nodeDegrees.set(edge.source.id, (nodeDegrees.get(edge.source.id) || 0) + 1);
+      nodeDegrees.set(edge.target.id, (nodeDegrees.get(edge.target.id) || 0) + 1);
       
       // Track which nodes are connected to each other
-      const sourceConnections = nodeConnections.get(edge.source) || new Set<string>();
-      const targetConnections = nodeConnections.get(edge.target) || new Set<string>();
+      const sourceConnections = nodeConnections.get(edge.source.id) || new Set<string>();
+      const targetConnections = nodeConnections.get(edge.target.id) || new Set<string>();
       
-      sourceConnections.add(edge.target);
-      targetConnections.add(edge.source);
+      sourceConnections.add(edge.target.id);
+      targetConnections.add(edge.source.id);
       
-      nodeConnections.set(edge.source, sourceConnections);
-      nodeConnections.set(edge.target, targetConnections);
+      nodeConnections.set(edge.source.id, sourceConnections);
+      nodeConnections.set(edge.target.id, targetConnections);
     });
     
     // Calculate center of the graph area
@@ -317,8 +315,8 @@ class Neo4jService {
       
       // Calculate attraction forces (connected nodes pull each other closer)
       edges.forEach(edge => {
-        const sourceNode = nodeMap.get(edge.source);
-        const targetNode = nodeMap.get(edge.target);
+        const sourceNode = nodeMap.get(edge.source.id);
+        const targetNode = nodeMap.get(edge.target.id);
         
         if (sourceNode && targetNode) {
           const dx = targetNode.x - sourceNode.x;
@@ -333,8 +331,8 @@ class Neo4jService {
           // Attraction force is proportional to distance and edge weight
           const force = distance * attractionForce * edgeWeight;
           
-          const dispSource = displacements.get(edge.source)!;
-          const dispTarget = displacements.get(edge.target)!;
+          const dispSource = displacements.get(edge.source.id)!;
+          const dispTarget = displacements.get(edge.target.id)!;
           
           // Apply force along the displacement vector
           dispSource.dx += (dx / distance) * force;
@@ -450,13 +448,13 @@ class Neo4jService {
       
       // Add any additional nodes from relationships
       for (const edge of edges) {
-        if (!allNodesMap.has(edge.source)) {
+        if (!allNodesMap.has(edge.source.id)) {
           // Need to fetch this node
           const sourceNodeResult = await session.run(`
             MATCH (n)
             WHERE id(n) = $nodeId
             RETURN n
-          `, { nodeId: parseInt(edge.source) });
+          `, { nodeId: parseInt(edge.source.id) });
           
           if (sourceNodeResult.records.length > 0) {
             const sourceNode = this.nodeToGraphNode(sourceNodeResult.records[0]);
@@ -464,13 +462,13 @@ class Neo4jService {
           }
         }
         
-        if (!allNodesMap.has(edge.target)) {
+        if (!allNodesMap.has(edge.target.id)) {
           // Need to fetch this node
           const targetNodeResult = await session.run(`
             MATCH (n)
             WHERE id(n) = $nodeId
             RETURN n
-          `, { nodeId: parseInt(edge.target) });
+          `, { nodeId: parseInt(edge.target.id) });
           
           if (targetNodeResult.records.length > 0) {
             const targetNode = this.nodeToGraphNode(targetNodeResult.records[0]);

@@ -2,191 +2,195 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Graph } from "@antv/g6";
-import { useNeo4jGraph } from "@/hooks/use-neo4j-graph";
+import * as d3 from "d3";
 import { GraphNode, GraphEdge } from "@/types/graph";
+import { NODE_COLORS } from "@/constants/colors";
 
-export default function GraphVisualization() {
-  const { nodes, edges, g6Data, searchQuery, isLoading, error } = useNeo4jGraph();
+interface GraphVisualizationProps {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export default function GraphVisualization({ nodes, edges}: GraphVisualizationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<any>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const [selected, setSelected] = useState<GraphNode | GraphEdge | null>(null);
 
-  const nodeColors: Record<string, string> = {
-    Person: "#9e58bd", // Purple
-    Company: "#00828e", // Teal
-    Project: "#f59e0b", // Amber
-    Technology: "#1c005f", // Violet
-    Team: "#ef4444", // Red
-  };
-
-  // Format data for G6
-  // const formatData = () => {
-  //   const formattedNodes = nodes.map((node) => ({
-  //     id: node.id,
-  //     data: {
-  //       label: node.label,
-  //       type: node.type,
-  //       properties: node.properties,
-  //     },
-  //     style: {
-  //       x: node.x,
-  //       y: node.y,
-  //       labelFontSize: 20,
-  //       labelText: node.label,
-  //       fill: nodeColors[node.type] || "#6B7280",
-  //       stroke: "#fff",
-  //       lineWidth: 1,
-  //       shadowColor:
-  //         searchQuery &&
-  //         (node.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //           node.type.toLowerCase().includes(searchQuery.toLowerCase()))
-  //           ? "#FBBF24"
-  //           : "",
-  //       shadowBlur:
-  //         searchQuery &&
-  //         (node.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //           node.type.toLowerCase().includes(searchQuery.toLowerCase()))
-  //           ? 10
-  //           : 0,
-  //     },
-  //   }));
-
-  //   const formattedEdges = edges.map((edge) => ({
-  //     id: edge.id,
-  //     source: edge.source,
-  //     target: edge.target,
-  //     data: {
-  //       type: edge.type,
-  //       properties: edge.properties,
-  //       label: edge.type,
-  //     },
-  //     style: {
-  //       label: false,
-  //       labelText: edge.type,
-  //       labelBackground: true,
-  //       stroke: "#0569f4",
-  //       lineWidth: 4,
-  //     },
-  //     state: {
-  //       active: {
-  //         label: true,
-  //       },
-  //     },
-  //   }));
-  //   return {
-  //     nodes: formattedNodes,
-  //     edges: formattedEdges,
-  //   };
-  // };
-
   useEffect(() => {
-    if (!containerRef.current || isLoading || error) return;
-    if (nodes.length === 0 || edges.length === 0) return;
+    if (!containerRef.current) return;
 
-    console.log("Edges:", g6Data.edges);
-    if (!graphRef.current) {
-      // Initialize G6 graph
-      graphRef.current = new Graph({
-        container: containerRef.current,
-        data: g6Data,
-        width: containerRef.current.clientWidth,
-        height: containerRef.current.clientHeight,
-        // Configure node appearance
-        node: {
-          type: "circle",
-          style: {
-            size: 40,
-            labelPlacement: "bottom",
-            labelOffset: 10,
-            labelFill: "#FFFFFF",
-            labelFontSize: 12,
-          },
-        },
-        // Configure edge appearance
-        edge: {
-          type: "line",
-          style: {
-            stroke: "#0569f4",
-            lineWidth: 2,
-            endArrow: true,
-            labelPlacement: "center",
-            labelStyle: {
-              fill: "#94A3B8",
-              fontSize: 10,
-            },
-          },
-        },
-        // Add interactive behaviors
-        behaviors: ["drag-canvas", "zoom-canvas", "drag-element"],
+    const width = containerRef.current.clientWidth;
+    const height = containerRef.current.clientHeight;
+
+    // Clear any existing SVG
+    d3.select(containerRef.current).selectAll("svg").remove();
+
+    // Create SVG
+    const svg = d3.select(containerRef.current)
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("viewBox", [0, 0, width, height])
+      .attr("style", "max-width: 100%; height: auto;");
+
+    svgRef.current = svg.node();
+
+    // Create a simulation with forces
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(edges).id((d: any) => d.id).distance(420))
+      .force("charge", d3.forceManyBody().strength(-420))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collide", d3.forceCollide().radius(50));
+
+    // Add a group for the links
+    const link = svg.append("g")
+      .selectAll("line")
+      .data(edges)
+      .join("line")
+      .attr("stroke", "#0569f4")
+      .attr("stroke-width", 6);
+
+    // Add link labels
+    const linkLabels = svg.append("g")
+      .selectAll("text")
+      .data(edges)
+      .join("text")
+      .text((d: any) => d.type)
+      .attr("font-size", 10)
+      .attr("fill", "#94A3B8") // Light Gray
+      .attr("text-anchor", "middle")
+      .attr("dy", -5)
+      .style("pointer-events", "none");
+      
+    // Add a group for the nodes
+    const node = svg.append("g")
+      .selectAll("circle")
+      .data(nodes)
+      .join("circle")
+      .attr("r", 20)
+      .attr("fill", (d: any) => NODE_COLORS[d.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
+      .style("cursor", "pointer");
+      
+    // Add node labels with colored circles
+    const nodeLabels = svg.append("g")
+      .selectAll("g")
+      .data(nodes)
+      .join("g")
+      .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
+
+    // Add text labels
+    nodeLabels.append("text")
+      .text((d: any) => d.label)
+      .attr("font-size", 12)
+      .attr("fill", "#FFFFFF")
+      .attr("text-anchor", "middle")
+      .attr("dy", 35)
+      .style("pointer-events", "none");
+
+    // Add drag behavior
+    const drag = d3.drag<SVGCircleElement, GraphNode>()
+      .on("start", (event, d: any) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", (event, d: any) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on("end", (event, d: any) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
       });
 
-      // Node click event
-      graphRef.current.on("node:click", (evt: any) => {
-        const nodeId = evt.target.id;
-        const clickedNode = nodes.find((n) => n.id === nodeId) || null;
-        setSelected(clickedNode);
+    node.call(drag as any);
+
+    // Add click handlers
+    node.on("click", (event, d: any) => {
+      event.stopPropagation();
+      setSelected(d);
+    });
+
+    link.on("click", (event, d: any) => {
+      event.stopPropagation();
+      setSelected(d);
+    });
+
+    svg.on("click", () => {
+      setSelected(null);
+    });
+
+    // Add zoom behavior
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.01, 4])
+      .on("zoom", (event) => {
+        const group = svg.selectAll("g");
+        group.attr("transform", event.transform);
       });
 
-      // Edge click event
-      graphRef.current.on("edge:click", (evt: any) => {
-        const edgeId = evt.target.id;
-        const clickedEdge = edges.find((n) => n.id === edgeId) || null;
-        setSelected(clickedEdge);
-      });
+    svg.call(zoom as any);
 
-      // Canvas click event (deselect node)
-      graphRef.current.on("canvas:click", () => {
-        setSelected(null);
-      });
-      console.log(graphRef.current, "Graph instance after initialization");
-      graphRef.current.render();
-    } else {
-      if (graphRef.current) {
-        graphRef.current.updateData(data);
-        graphRef.current.render();
-      }
-    }
+    // Set initial zoom level and center the view
+    const initialScale = 0.07;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const transform = d3.zoomIdentity
+      .translate(centerX, centerY)
+      .scale(initialScale)
+      .translate(-centerX, -centerY);
+    
+    svg.call(zoom.transform as any, transform);
+
+    // Update positions in each tick of the simulation
+    simulation.on("tick", () => {
+      link
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
+
+      node
+        .attr("cx", (d: any) => d.x)
+        .attr("cy", (d: any) => d.y);
+
+      nodeLabels
+        .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
+        
+      linkLabels
+        .attr("x", (d: any) => (d.source.x + d.target.x) / 2)
+        .attr("y", (d: any) => (d.source.y + d.target.y) / 2);
+    });
 
     // Handle window resize
     const handleResize = () => {
-      if (containerRef.current && graphRef.current) {
-        graphRef.current.changeSize(
-          containerRef.current.clientWidth,
-          containerRef.current.clientHeight
-        );
+      if (containerRef.current && svgRef.current) {
+        const newWidth = containerRef.current.clientWidth;
+        const newHeight = containerRef.current.clientHeight;
+        
+        // Update SVG dimensions
+        d3.select(svgRef.current)
+          .attr("width", newWidth)
+          .attr("height", newHeight)
+          .attr("viewBox", [0, 0, newWidth, newHeight]);
+          
+        // Update center force
+        simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+        simulation.alpha(0.3).restart();
       }
     };
 
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
+      simulation.stop();
     };
-  }, [nodes, edges, searchQuery, isLoading, error]);
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      if (graphRef.current) {
-        graphRef.current.destroy();
-      }
-    };
-  }, []);
+  }, [nodes, edges]);
 
   return (
     <div className="h-full relative bg-slate-900">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-white">Loading graph data...</div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-red-500">{error}</div>
-        </div>
-      )}
-      
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Node Details Panel */}
@@ -195,14 +199,6 @@ export default function GraphVisualization() {
           <CardContent className="p-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{
-                    backgroundColor: 'label' in selected 
-                      ? (nodeColors[selected.type] || "#6B7280")
-                      : "#6B7280",
-                  }}
-                />
                 <h3 className="font-semibold text-slate-100">
                   {'label' in selected ? selected.label : selected.type}
                 </h3>
@@ -223,26 +219,7 @@ export default function GraphVisualization() {
           </CardContent>
         </Card>
       )}
-
-      {/* Legend */}
-      <Card className="absolute bottom-4 right-4 bg-slate-800/90 border-slate-600 backdrop-blur-sm">
-        <CardContent className="p-4">
-          <h4 className="text-sm font-medium text-slate-100 mb-2">
-            Node Types
-          </h4>
-          <div className="space-y-1">
-            {Object.entries(nodeColors).map(([type, color]) => (
-              <div key={type} className="flex items-center gap-2 text-sm">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-                <span className="text-slate-300">{type}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
+

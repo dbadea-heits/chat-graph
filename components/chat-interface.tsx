@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Send, Bot, User, Search, HelpCircle, Paperclip } from "lucide-react"
+import { Send, Bot, User, Search, HelpCircle, Paperclip, Filter } from "lucide-react"
 
 interface Message {
   id: string
@@ -58,7 +58,7 @@ export default function ChatInterface() {
     }
 
     if (input.includes("neo4j") || input.includes("bloom")) {
-      return "Neo4j Bloom provides powerful graph visualization capabilities. In our Data Visualization tab, you can explore nodes, relationships, and use advanced filtering to understand your data better."
+      return "Filter and explore your AI's knowledge base."
     }
 
     return "That's interesting! I can help you with graph data queries and visualization. Try switching to the Data Visualization tab to explore the interactive graph."
@@ -78,53 +78,45 @@ export default function ChatInterface() {
           <h2 className="text-lg font-semibold text-slate-100">Chat Interface</h2>
           <p className="text-sm text-slate-400">AI-powered conversations with graph data insights</p>
         </div>
-        <Button
-          variant="outline"
-          className="border-slate-600 text-[#9e58bd] hover:bg-[#9e58bd]/10 hover:border-[#9e58bd]"
-        >
-          <HelpCircle className="w-4 h-4 mr-2" />
-          What is T3 Chat?
-        </Button>
       </div>
 
       {/* Welcome Content */}
       {messages.length === 0 && (
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="max-w-2xl text-center space-y-6">
-            <h1 className="text-3xl font-bold text-slate-100">T3 Chat is the best AI Chat ever made.</h1>
+            <h1 className="text-3xl font-bold text-slate-100">Welcome to The Brain Builder</h1>
 
             <div className="space-y-4 text-left">
               <div>
-                <h3 className="text-lg font-semibold text-slate-200 mb-2">1. We're fast.</h3>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">1. Your Personal Knowledge Base</h3>
                 <p className="text-slate-400">
-                  We're 2x faster than ChatGPT, 10x faster than DeepSeek. You'll feel the difference - trust me.
+                  Starting with philosophy, access a comprehensive collection of concepts, thinkers, and ideas across multiple domains, all organized in an interactive graph database. Perfect for building engaging curriculum materials.
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-slate-200 mb-2">2. We have every model you could want.</h3>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">2. AI-Powered Course Design</h3>
                 <p className="text-slate-400">
-                  Want to use <span className="font-medium text-[#9e58bd]">Claude</span> for code? We got you.
-                  <span className="font-medium text-[#00828e]"> DeepSeek r1</span> for math? Of course.
-                  <span className="font-medium text-[#9e58bd]"> ChatGPT 4o</span> for picture analysis? Why not.
+                  Let our advanced AI help you create <span className="font-medium text-[#9e58bd]">engaging lesson plans</span>, 
+                  <span className="font-medium text-[#00828e]"> interactive discussions</span>, and 
+                  <span className="font-medium text-[#9e58bd]"> thought-provoking assignments</span> tailored to your students' needs.
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-slate-200 mb-2">3. We're cheap. ($8/month)</h3>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">3. Customizable Learning Paths</h3>
                 <p className="text-slate-400">
-                  We're less than half the price of ChatGPT or Claude, and we're MORE generous with limits. You get over
-                  1,500 messages per month!
+                  Filter and customize the knowledge base to match your curriculum requirements. Create unique learning journeys that connect concepts across different domains in meaningful ways for your students.
                 </p>
               </div>
             </div>
 
             <div className="pt-4">
-              <h3 className="text-lg font-semibold text-[#9e58bd] mb-2">Whatcha waiting for?</h3>
+              <h3 className="text-lg font-semibold text-[#9e58bd] mb-2">Ready to Transform Your Teaching?</h3>
               <p className="text-slate-400">
-                Reply here to get started, or click the little "chat" icon up top to make a new chat. Or you can{" "}
+                Start a conversation with our AI assistant to explore your knowledge base, or use the graph visualization to discover connections between concepts. You can also{" "}
                 <span className="text-[#00828e] font-medium cursor-pointer hover:text-[#00a3b0]">
-                  check out the FAQ
+                  explore our teaching resources
                 </span>
                 .
               </p>
