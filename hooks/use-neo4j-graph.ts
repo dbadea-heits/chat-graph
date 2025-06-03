@@ -60,7 +60,7 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
         setEdges(data.edges);
         
         // Get D3 formatted data
-        const d3FormattedData = await neo4jService.getD3GraphData(searchQuery);
+        const d3FormattedData = await neo4jService.getD3GraphData(data.nodes, data.edges);
         setD3Data(d3FormattedData);
       } catch (err) {
         console.error('Error fetching graph data:', err);
@@ -96,7 +96,7 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
       setEdges(data.edges);
       
       // Get D3 formatted data
-      const d3FormattedData = await neo4jService.getD3GraphData(searchQuery);
+      const d3FormattedData = await neo4jService.getD3GraphData(data.nodes, data.edges);
       setD3Data(d3FormattedData);
     } catch (err) {
       console.error('Error refreshing graph data:', err);

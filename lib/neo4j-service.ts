@@ -5,15 +5,18 @@ import { neo4jConfig } from './neo4j-config';
 class Neo4jService {
   private driver: Driver | null = null;
   private uri: string;
+  private httpUri: string;
   private username: string;
   private password: string;
 
   constructor(
-    uri: string = neo4jConfig.uri, 
+    uri: string = neo4jConfig.uri,
+    httpUri: string = neo4jConfig.httpUri,
     username: string = neo4jConfig.username,
     password: string = neo4jConfig.password
   ) {
     this.uri = uri;
+    this.httpUri = httpUri;
     this.username = username;
     this.password = password;
   }
@@ -82,43 +85,90 @@ class Neo4jService {
   }
 
   // Get all nodes and relationships from the database
-  async getGraphData(graphId?: string): Promise<{ nodes: GraphNode[], edges: GraphEdge[] }> {
-    await this.connect();
-    const session = this.getSession();
-    
+  async getGraphData(graphId: string = "default"): Promise<{ nodes: GraphNode[], edges: GraphEdge[] }> {
+    console.log("Progress - query neo4j");
     try {
-      // Get all nodes
-      const nodesResult = await session.run(`
-        MATCH (n${graphId ? ' {graph_id: $graphId}' : ''})
-        RETURN n
-      `, graphId ? { graphId } : {});
-      
-      const nodes: GraphNode[] = nodesResult.records.map(record => 
-        this.nodeToGraphNode(record)
-      );
-      
-      // Get all relationships
-      const edgesResult = await session.run(`
-        MATCH (source${graphId ? ' {graph_id: $graphId}' : ''})-[r]->(target${graphId ? ' {graph_id: $graphId}' : ''})
-        RETURN source, r, target
-      `, graphId ? { graphId } : {});
-      const edges: GraphEdge[] = edgesResult.records.map(record => 
-        this.relationToGraphEdge(record)
-      );
-      
-      // Position nodes based on their connections
-      this.assignNodePositions(nodes, edges);
-      
-      return { nodes, edges };
-    } finally {
-      await session.close();
+      const response = await fetch(`${this.httpUri}/db/neo4j/tx/commit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa(`${this.username}:${this.password}`)
+        },
+        body: JSON.stringify({
+          statements: [{
+            statement: `
+              MATCH (n {graph_id: $graphId})
+              OPTIONAL MATCH (n)-[r]->(m {graph_id: $graphId})
+              RETURN n, r, m
+            `,
+            parameters: {
+              graphId: graphId || ''
+            },
+            resultDataContents: ["graph"]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      return this.processNeo4jData(data);
+    } catch (error: any) {
+      console.error('Error fetching graph data:', error);
+      throw new Error(`Failed to fetch graph data: ${error.message}`);
     }
   }
 
+  // Process Neo4j data into graph format
+  private processNeo4jData(data: any): { nodes: GraphNode[], edges: GraphEdge[] } {
+    console.log("Progress - processing neo4j data");
+    const nodes = new Map<string, GraphNode>();
+    const edges: GraphEdge[] = [];
+    const nodeTypes = new Set<string>();
+
+    data.results[0].data.forEach((row: any) => {
+      // Process nodes
+      if (row.graph.nodes) {
+        row.graph.nodes.forEach((node: any) => {
+          if (!nodes.has(node.id)) {
+            const type = node.labels[0];
+            nodeTypes.add(type);
+            nodes.set(node.id, {
+              id: node.id,
+              label: node.properties.displayName || node.id,
+              type: type,
+              properties: node.properties,
+              x: 0,
+              y: 0
+            });
+          }
+        });
+      }
+
+      // Process relationships
+      if (row.graph.relationships) {
+        row.graph.relationships.forEach((rel: any) => {
+          edges.push({
+            id: rel.id,
+            source: rel.startNode,
+            target: rel.endNode,
+            type: rel.type,
+            properties: rel.properties
+          });
+        });
+      }
+    });
+
+    // Position nodes based on their connections
+    this.assignNodePositions(Array.from(nodes.values()), edges);
+
+    return {
+      nodes: Array.from(nodes.values()),
+      edges: edges
+    };
+  }
+
   // Convert Neo4j data directly to D3 format
-  async getD3GraphData(searchQuery: string = ''): Promise<{ nodes: any[], edges: any[] }> {
-    const { nodes, edges } = await (searchQuery ? this.searchGraph(searchQuery) : this.getGraphData());
-    
+  async getD3GraphData(nodes: GraphNode[], edges: GraphEdge[]): Promise<{ nodes: any[], edges: any[] }> {
+    console.log("Progress - formatting d3 graph data");
     // Generate random colors for each unique node type
     const nodeTypes = Array.from(new Set(nodes.map(node => node.type)));
     const typeColors = new Map<string, string>();
@@ -146,19 +196,7 @@ class Neo4jService {
         labelText: node.properties.displayName,
         fill: typeColors.get(node.type) || "#6B7280",
         stroke: "#fff",
-        lineWidth: 1,
-        shadowColor:
-          searchQuery &&
-          (node.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            node.type.toLowerCase().includes(searchQuery.toLowerCase()))
-            ? "#FBBF24"
-            : "",
-        shadowBlur:
-          searchQuery &&
-          (node.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            node.type.toLowerCase().includes(searchQuery.toLowerCase()))
-            ? 10
-            : 0,
+        lineWidth: 1
       },
     }));
 
@@ -185,6 +223,8 @@ class Neo4jService {
         },
       },
     }));
+
+    console.log("Progress - done formatting d3 graph data");
 
     return {
       nodes: d3Nodes,
@@ -410,7 +450,8 @@ class Neo4jService {
     if (!query || query.trim() === '') {
       return this.getGraphData();
     }
-    
+    await this.connect();
+    console.log("connected to neo4j");
     const session = this.getSession();
     
     try {
