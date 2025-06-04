@@ -1,14 +1,14 @@
-export const NODE_COLORS = {
-  person: "#9e58bd", // Purple
-  category: "#00828e", // Teal
-  organization: "#f59e0b", // Amber
-  policy: "#1c005f", // Violet
-  book: "#ef4444", // Red
-  virtue: "#00828e", // Light Green
-  event: "#10b981", // Emerald
-  concept: "#3b82f6", // Blue
-  language: "#f97316", // Orange
-  geo: "#6366f1", // Indigo
-} as const;
+export const COLORS: string[] = [
+  "#9e58bd", // Purple
+  "#00828e", // Teal
+  "#f59e0b", // Amber
+  "#1c005f", // Violet
+  "#ef4444", // Red
+  "#00828e", // Light Green
+  "#10b981", // Emerald
+  "#3b82f6", // Blue
+  "#f97316", // Orange
+  "#6366f1", // Indigo
+];
 
-export type NodeType = keyof typeof NODE_COLORS; 
+export type NodeType = string; 

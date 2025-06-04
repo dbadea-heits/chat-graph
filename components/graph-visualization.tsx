@@ -4,14 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import * as d3 from "d3";
 import { GraphNode, GraphEdge } from "@/types/graph";
-import { NODE_COLORS } from "@/constants/colors";
+import { COLORS } from "@/constants/colors";
 
 interface GraphVisualizationProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  nodeTypes: string[];
 }
 
-export default function GraphVisualization({ nodes, edges}: GraphVisualizationProps) {
+export default function GraphVisualization({ nodes, edges, nodeTypes}: GraphVisualizationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [selected, setSelected] = useState<GraphNode | GraphEdge | null>(null);
@@ -68,11 +69,14 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
       .data(nodes)
       .join("circle")
       .attr("r", 20)
-      .attr("fill", (d: any) => NODE_COLORS[d.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
+      .attr("fill", (d: any) => {
+        const colorIndex = nodeTypes.indexOf(d.type);
+        return colorIndex >= 0 ? COLORS[colorIndex % COLORS.length] : "#6B7280";
+      })
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .style("cursor", "pointer");
-      
+
     // Add node labels with colored circles
     const nodeLabels = svg.append("g")
       .selectAll("g")
@@ -222,4 +226,3 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
     </div>
   );
 }
-
