@@ -69,7 +69,10 @@ export default function GraphVisualization({ nodes, edges, nodeTypes}: GraphVisu
       .data(nodes)
       .join("circle")
       .attr("r", 20)
-      .attr("fill", (d: any) => COLORS[nodeTypes.indexOf(d.type) % COLORS.length] || "#6B7280")
+      .attr("fill", (d: any) => {
+        const colorIndex = nodeTypes.indexOf(d.type);
+        return colorIndex >= 0 ? COLORS[colorIndex % COLORS.length] : "#6B7280";
+      })
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .style("cursor", "pointer");

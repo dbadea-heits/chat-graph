@@ -272,7 +272,7 @@ export default function DataVizInterface() {
                       <div 
                         className="w-2 h-2 rounded-full" 
                         style={{ 
-                          backgroundColor: COLORS[nodeTypes.indexOf(type) % COLORS.length] || "#6B7280"
+                          backgroundColor: COLORS[nodeTypes.indexOf(type) % COLORS.length] ?? "#6B7280"
                         }} 
                       />
                       {type}
