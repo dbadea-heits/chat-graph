@@ -36,19 +36,19 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
     svgRef.current = svg.node();
 
     // Create a simulation with forces
-    const simulation = d3.forceSimulation()
-      .force("link", d3.forceLink<GraphNode, GraphEdge>().id((d: any) => d.id).distance(600))
-      .force("charge", d3.forceManyBody().strength(-3000))
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(edges).id((d: any) => d.id).distance(420))
+      .force("charge", d3.forceManyBody().strength(-420))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collide", d3.forceCollide().radius(300));
+      .force("collide", d3.forceCollide().radius(50));
 
     // Add a group for the links
     const link = svg.append("g")
       .selectAll("line")
       .data(edges)
-      .enter()
-      .append("line")
-      .attr("class", "link");
+      .join("line")
+      .attr("stroke", "#0569f4")
+      .attr("stroke-width", 6);
 
     // Add link labels
     const linkLabels = svg.append("g")
@@ -66,25 +66,19 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
     const node = svg.append("g")
       .selectAll("circle")
       .data(nodes)
-      .enter()
-      .append("circle")
-      .attr("class", "node")
+      .join("circle")
       .attr("r", 20)
       .attr("fill", (d: any) => NODE_COLORS[d.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
-      .style("cursor", "pointer")
+      .style("cursor", "pointer");
       
     // Add node labels with colored circles
     const nodeLabels = svg.append("g")
-      .selectAll("text")
+      .selectAll("g")
       .data(nodes)
-      .enter()
-      .append("text")
-      .attr("class", "node-label")
-      .text(d => d.properties.displayName)
-      .attr("x", 20 + 2)
-      .attr("y", 3);
+      .join("g")
+      .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
 
     // Add text labels
     nodeLabels.append("text")
@@ -112,6 +106,8 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
         d.fy = null;
       });
 
+    node.call(drag as any);
+
     // Add click handlers
     node.on("click", (event, d: any) => {
       event.stopPropagation();
@@ -138,7 +134,7 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
     svg.call(zoom as any);
 
     // Set initial zoom level and center the view
-    const initialScale = 1;  // Start at normal scale
+    const initialScale = 0.07;
     const centerX = width / 2;
     const centerY = height / 2;
     const transform = d3.zoomIdentity
@@ -149,27 +145,46 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
     svg.call(zoom.transform as any, transform);
 
     // Update positions in each tick of the simulation
-    simulation.nodes(nodes)
-      .on("tick", () => {
-          link
-              .attr("x1", d => d.source.x)
-              .attr("y1", d => d.source.y)
-              .attr("x2", d => d.target.x)
-              .attr("y2", d => d.target.y);
+    simulation.on("tick", () => {
+      link
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
 
-          node
-              .attr("cx", d => d.x)
-              .attr("cy", d => d.y);
+      node
+        .attr("cx", (d: any) => d.x)
+        .attr("cy", (d: any) => d.y);
 
-          nodeLabels
-              .attr("transform", d => `translate(${d.x}, ${d.y})`);
-      });
+      nodeLabels
+        .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
+        
+      linkLabels
+        .attr("x", (d: any) => (d.source.x + d.target.x) / 2)
+        .attr("y", (d: any) => (d.source.y + d.target.y) / 2);
+    });
 
-    // Fix the type error with force link
-    const linkForce = simulation.force("link") as d3.ForceLink<GraphNode, GraphEdge>;
-    linkForce.links(edges);
+    // Handle window resize
+    const handleResize = () => {
+      if (containerRef.current && svgRef.current) {
+        const newWidth = containerRef.current.clientWidth;
+        const newHeight = containerRef.current.clientHeight;
+        
+        // Update SVG dimensions
+        d3.select(svgRef.current)
+          .attr("width", newWidth)
+          .attr("height", newHeight)
+          .attr("viewBox", [0, 0, newWidth, newHeight]);
+          
+        // Update center force
+        simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+        simulation.alpha(0.3).restart();
+      }
+    };
 
+    window.addEventListener("resize", handleResize);
     return () => {
+      window.removeEventListener("resize", handleResize);
       simulation.stop();
     };
   }, [nodes, edges]);
@@ -207,4 +222,3 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
     </div>
   );
 }
-
