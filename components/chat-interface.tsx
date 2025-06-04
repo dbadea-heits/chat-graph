@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Send, Bot, User, Search, Paperclip } from "lucide-react"
+import { Send, Bot, User, Search, Paperclip, Loader2 } from "lucide-react"
 import { apiConfig } from "@/lib/api-config"
 
 interface Message {
@@ -21,6 +21,7 @@ export default function ChatInterface() {
   const [inputValue, setInputValue] = useState("")
   const [graphId, setGraphId] = useState("default")
   const [nodeIds, setNodeIds] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export default function ChatInterface() {
 
     setMessages((prev) => [...prev, userMessage])
     setInputValue("")
+    setIsLoading(true)
 
     try {
       const response = await fetch(`${apiConfig.baseUrl}${apiConfig.askRagEndpoint}`, {
@@ -83,6 +85,8 @@ export default function ChatInterface() {
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -191,6 +195,21 @@ export default function ChatInterface() {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex items-start gap-3">
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="bg-[#00828e]">
+                    <Bot className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="max-w-[80%] rounded-lg p-3 bg-slate-700 border border-slate-600 text-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#00828e]" />
+                    <p className="text-sm text-slate-400">Thinking...</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
       )}

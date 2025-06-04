@@ -128,7 +128,6 @@ export default function DataVizInterface() {
           },
           body: JSON.stringify({
             input_text: appliedQuery,
-            graph_id: "filtered_graph"
           }),
         });
 
