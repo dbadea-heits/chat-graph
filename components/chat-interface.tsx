@@ -18,7 +18,7 @@ interface Message {
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
-  const [selectedModel, setSelectedModel] = useState("default")
+  const [graphId, setGraphId] = useState("default")
   const [nodeIds, setNodeIds] = useState<string[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
@@ -29,7 +29,7 @@ export default function ChatInterface() {
         const data = await response.json()
         setNodeIds(data)
         if (data.length > 0) {
-          setSelectedModel(data[0])
+          setGraphId(data[0])
         }
       } catch (error) {
         console.error('Error fetching node IDs:', error)
@@ -39,7 +39,7 @@ export default function ChatInterface() {
     fetchNodeIds()
   }, [])
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return
 
     const userMessage: Message = {
@@ -52,16 +52,37 @@ export default function ChatInterface() {
     setMessages((prev) => [...prev, userMessage])
     setInputValue("")
 
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:8000/ask-rag', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: inputValue,
+          graph_id: graphId
+        })
+      })
+
+      const data = await response.json()
+      
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: generateBotResponse(inputValue),
+        content: data.response,
         sender: "bot",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, botResponse])
-    }, 1000)
+    } catch (error) {
+      console.error('Error fetching response:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Sorry, I encountered an error while processing your request.",
+        sender: "bot",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    }
   }
 
   const generateBotResponse = (userInput: string): string => {
@@ -205,7 +226,7 @@ export default function ChatInterface() {
           </div>
 
           <div className="flex items-center justify-between mt-2">
-            <Select value={selectedModel} onValueChange={setSelectedModel}>
+            <Select value={graphId} onValueChange={setGraphId}>
               <SelectTrigger className="w-48 h-8 bg-slate-700 border-slate-600 text-slate-200 text-sm">
                 <SelectValue />
               </SelectTrigger>
