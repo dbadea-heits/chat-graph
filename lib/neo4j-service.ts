@@ -109,6 +109,11 @@ class Neo4jService {
         })
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Neo4j HTTP request failed with status ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
       return this.processNeo4jData(data);
     } catch (error: any) {
