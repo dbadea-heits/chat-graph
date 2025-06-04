@@ -56,7 +56,7 @@ export default function DataVizInterface() {
         const response = await fetch(`${apiConfig.baseUrl}${apiConfig.jobStatusEndpoint}/${jobId}`);
         const data = await response.json();
 
-        if (data.status === "error") {
+        if (data.status === "failed") {
           console.error("Job failed:", data.error);
           setIsFiltering(false);
           return;
@@ -128,7 +128,6 @@ export default function DataVizInterface() {
           },
           body: JSON.stringify({
             input_text: appliedQuery,
-            graph_name: "filtered_graph"
           }),
         });
 
@@ -380,7 +379,7 @@ export default function DataVizInterface() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Node Types:</span>
-                <span className="text-slate-100 font-medium">{selectedNodeTypes.length}</span>
+                <span className="text-slate-100 font-medium">{selectedNodeTypes.length || nodeTypes.length}</span>
               </div>
               {appliedQuery && (
                 <div className="pt-2 border-t border-slate-600">

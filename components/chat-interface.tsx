@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Send, Bot, User, Search, HelpCircle, Paperclip, Filter } from "lucide-react"
+import { Send, Bot, User, Search, Paperclip, Loader2 } from "lucide-react"
+import { apiConfig } from "@/lib/api-config"
 
 interface Message {
   id: string
@@ -18,10 +19,29 @@ interface Message {
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash")
+  const [graphId, setGraphId] = useState("default")
+  const [nodeIds, setNodeIds] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
-  const handleSendMessage = () => {
+  useEffect(() => {
+    const fetchNodeIds = async () => {
+      try {
+        const response = await fetch(`${apiConfig.baseUrl}${apiConfig.nodeIdsEndpoint}`)
+        const data = await response.json()
+        setNodeIds(data)
+        if (data.length > 0) {
+          setGraphId(data[0])
+        }
+      } catch (error) {
+        console.error('Error fetching node IDs:', error)
+      }
+    }
+
+    fetchNodeIds()
+  }, [])
+
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return
 
     const userMessage: Message = {
@@ -33,17 +53,41 @@ export default function ChatInterface() {
 
     setMessages((prev) => [...prev, userMessage])
     setInputValue("")
+    setIsLoading(true)
 
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${apiConfig.baseUrl}${apiConfig.askRagEndpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: inputValue,
+          graph_id: graphId
+        })
+      })
+
+      const data = await response.json()
+      
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: generateBotResponse(inputValue),
+        content: data.response,
         sender: "bot",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, botResponse])
-    }, 1000)
+    } catch (error) {
+      console.error('Error fetching response:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Sorry, I encountered an error while processing your request.",
+        sender: "bot",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const generateBotResponse = (userInput: string): string => {
@@ -151,6 +195,21 @@ export default function ChatInterface() {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex items-start gap-3">
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="bg-[#00828e]">
+                    <Bot className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="max-w-[80%] rounded-lg p-3 bg-slate-700 border border-slate-600 text-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#00828e]" />
+                    <p className="text-sm text-slate-400">Thinking...</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
       )}
@@ -187,23 +246,16 @@ export default function ChatInterface() {
           </div>
 
           <div className="flex items-center justify-between mt-2">
-            <Select value={selectedModel} onValueChange={setSelectedModel}>
+            <Select value={graphId} onValueChange={setGraphId}>
               <SelectTrigger className="w-48 h-8 bg-slate-700 border-slate-600 text-slate-200 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
-                <SelectItem value="gemini-2.5-flash" className="text-slate-200 focus:bg-slate-600">
-                  Gemini 2.5 Flash
-                </SelectItem>
-                <SelectItem value="claude-3.5" className="text-slate-200 focus:bg-slate-600">
-                  Claude 3.5 Sonnet
-                </SelectItem>
-                <SelectItem value="gpt-4o" className="text-slate-200 focus:bg-slate-600">
-                  ChatGPT 4o
-                </SelectItem>
-                <SelectItem value="deepseek-r1" className="text-slate-200 focus:bg-slate-600">
-                  DeepSeek r1
-                </SelectItem>
+                {nodeIds.map((nodeId) => (
+                  <SelectItem key={nodeId} value={nodeId} className="text-slate-200 focus:bg-slate-600">
+                    {nodeId}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
