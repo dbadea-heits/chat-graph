@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import * as d3 from "d3";
 import { GraphNode, GraphEdge } from "@/types/graph";
-import { NODE_COLORS } from "@/constants/colors";
+import { COLORS } from "@/constants/colors";
 
 interface GraphVisualizationProps {
   nodes: GraphNode[];
@@ -68,7 +68,7 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
       .data(nodes)
       .join("circle")
       .attr("r", 20)
-      .attr("fill", (d: any) => NODE_COLORS[d.properties.entity_type?.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280")
+      .attr("fill", (d: any) => COLORS[d.type.toLowerCase().charCodeAt(0) % COLORS.length] || "#6B7280")
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .style("cursor", "pointer");

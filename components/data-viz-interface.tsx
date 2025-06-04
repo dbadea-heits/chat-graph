@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, Filter, Maximize2, RefreshCw } from "lucide-react"
 import GraphVisualization from "@/components/graph-visualization"
 import { useNeo4jGraph } from "@/hooks/use-neo4j-graph"
-import { NODE_COLORS } from "@/constants/colors"
 import { apiConfig } from "@/lib/api-config"
+import { COLORS } from "@/constants/colors"
 
 export default function DataVizInterface() {
   const { 
@@ -272,7 +272,7 @@ export default function DataVizInterface() {
                       <div 
                         className="w-2 h-2 rounded-full" 
                         style={{ 
-                          backgroundColor: NODE_COLORS[type.toLowerCase() as keyof typeof NODE_COLORS] || "#6B7280"
+                          backgroundColor: COLORS[type.toLowerCase().charCodeAt(0) % COLORS.length] || "#6B7280"
                         }} 
                       />
                       {type}

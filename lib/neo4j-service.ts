@@ -181,17 +181,6 @@ class Neo4jService {
   // Convert Neo4j data directly to D3 format
   async getD3GraphData(nodes: GraphNode[], edges: GraphEdge[]): Promise<{ nodes: any[], edges: any[] }> {
     console.log("Progress - formatting d3 graph data");
-    // Generate random colors for each unique node type
-    const nodeTypes = Array.from(new Set(nodes.map(node => node.type)));
-    const typeColors = new Map<string, string>();
-    
-    // Assign a random vibrant color to each node type
-    nodeTypes.forEach(type => {
-      const hue = Math.floor(Math.random() * 360); // Random hue (0-359)
-      const saturation = 70 + Math.floor(Math.random() * 30); // High saturation (70-99%)
-      const lightness = 45 + Math.floor(Math.random() * 15); // Medium lightness (45-59%)
-      typeColors.set(type, `hsl(${hue}, ${saturation}%, ${lightness}%)`);
-    });
 
     // Format nodes for D3
     const d3Nodes = nodes.map(node => ({
@@ -206,7 +195,6 @@ class Neo4jService {
         y: node.y,
         labelFontSize: 20,
         labelText: node.properties.displayName,
-        fill: typeColors.get(node.type) || "#6B7280",
         stroke: "#fff",
         lineWidth: 1
       },
