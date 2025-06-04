@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Send, Bot, User, Search, HelpCircle, Paperclip, Filter } from "lucide-react"
+import { Send, Bot, User, Search, Paperclip } from "lucide-react"
+import { apiConfig } from "@/lib/api-config"
 
 interface Message {
   id: string
@@ -25,7 +26,7 @@ export default function ChatInterface() {
   useEffect(() => {
     const fetchNodeIds = async () => {
       try {
-        const response = await fetch('http://localhost:8000/node-ids')
+        const response = await fetch(`${apiConfig.baseUrl}${apiConfig.nodeIdsEndpoint}`)
         const data = await response.json()
         setNodeIds(data)
         if (data.length > 0) {
@@ -53,7 +54,7 @@ export default function ChatInterface() {
     setInputValue("")
 
     try {
-      const response = await fetch('http://localhost:8000/ask-rag', {
+      const response = await fetch(`${apiConfig.baseUrl}${apiConfig.askRagEndpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

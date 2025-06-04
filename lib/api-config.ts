@@ -5,4 +5,7 @@ export const apiConfig = {
     filterGraphEndpoint: process.env.NEXT_FILTER_GRAPH_ENDPOINT || "/filter-graph",
     updateNeo4jEndpoint: process.env.NEXT_UPDATE_NEO4J_ENDPOINT || "/update-neo4j",
     jobStatusEndpoint: process.env.NEXT_JOB_STATUS_ENDPOINT || "/job-status",
+    nodeIdsEndpoint: process.env.NEXT_NODE_IDS_ENDPOINT || "/node-ids",
+    askRagEndpoint: process.env.NEXT_ASK_RAG_ENDPOINT || "/ask-rag",
+    
 } as const; 
