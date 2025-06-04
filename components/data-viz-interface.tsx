@@ -380,7 +380,7 @@ export default function DataVizInterface() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Node Types:</span>
-                <span className="text-slate-100 font-medium">{selectedNodeTypes.length}</span>
+                <span className="text-slate-100 font-medium">{selectedNodeTypes.length || nodeTypes.length}</span>
               </div>
               {appliedQuery && (
                 <div className="pt-2 border-t border-slate-600">

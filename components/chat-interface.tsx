@@ -18,8 +18,26 @@ interface Message {
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash")
+  const [selectedModel, setSelectedModel] = useState("default")
+  const [nodeIds, setNodeIds] = useState<string[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const fetchNodeIds = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/node-ids')
+        const data = await response.json()
+        setNodeIds(data)
+        if (data.length > 0) {
+          setSelectedModel(data[0])
+        }
+      } catch (error) {
+        console.error('Error fetching node IDs:', error)
+      }
+    }
+
+    fetchNodeIds()
+  }, [])
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return
@@ -192,18 +210,11 @@ export default function ChatInterface() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
-                <SelectItem value="gemini-2.5-flash" className="text-slate-200 focus:bg-slate-600">
-                  Gemini 2.5 Flash
-                </SelectItem>
-                <SelectItem value="claude-3.5" className="text-slate-200 focus:bg-slate-600">
-                  Claude 3.5 Sonnet
-                </SelectItem>
-                <SelectItem value="gpt-4o" className="text-slate-200 focus:bg-slate-600">
-                  ChatGPT 4o
-                </SelectItem>
-                <SelectItem value="deepseek-r1" className="text-slate-200 focus:bg-slate-600">
-                  DeepSeek r1
-                </SelectItem>
+                {nodeIds.map((nodeId) => (
+                  <SelectItem key={nodeId} value={nodeId} className="text-slate-200 focus:bg-slate-600">
+                    {nodeId}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
