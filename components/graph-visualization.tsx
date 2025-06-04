@@ -9,9 +9,10 @@ import { COLORS } from "@/constants/colors";
 interface GraphVisualizationProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  nodeTypes: string[];
 }
 
-export default function GraphVisualization({ nodes, edges}: GraphVisualizationProps) {
+export default function GraphVisualization({ nodes, edges, nodeTypes}: GraphVisualizationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [selected, setSelected] = useState<GraphNode | GraphEdge | null>(null);
@@ -68,11 +69,11 @@ export default function GraphVisualization({ nodes, edges}: GraphVisualizationPr
       .data(nodes)
       .join("circle")
       .attr("r", 20)
-      .attr("fill", (d: any) => COLORS[d.type.toLowerCase().charCodeAt(0) % COLORS.length] || "#6B7280")
+      .attr("fill", (d: any) => COLORS[nodeTypes.indexOf(d.type) % COLORS.length] || "#6B7280")
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .style("cursor", "pointer");
-      
+
     // Add node labels with colored circles
     const nodeLabels = svg.append("g")
       .selectAll("g")
