@@ -1,8 +1,26 @@
 // Neo4j database connection configuration
 
-export const neo4jConfig = {
-  uri: process.env.NEXT_PUBLIC_NEO4J_URI || "neo4j://localhost:7687",
-  httpUri: process.env.NEXT_PUBLIC_NEO4J_HTTP_URI || "http://localhost:7474",
-  username: process.env.NEXT_PUBLIC_NEO4J_USERNAME || "neo4j",
-  password: process.env.NEXT_PUBLIC_NEO4J_PASSWORD || "password",
+const getConfig = () => {
+  const uri = process.env.NEO4J_URI;
+  const httpUri = process.env.NEO4J_HTTP_URI;
+  const username = process.env.NEO4J_USERNAME;
+  const password = process.env.NEO4J_PASSWORD;
+
+  if (!uri || !httpUri || !username || !password) {
+    throw new Error(`Missing required Neo4j environment variables: ${[
+      !uri && 'NEO4J_URI',
+      !httpUri && 'NEO4J_HTTP_URI', 
+      !username && 'NEO4J_USERNAME',
+      !password && 'NEO4J_PASSWORD'
+    ].filter(Boolean).join(', ')}`);
+  }
+
+  return {
+    uri,
+    httpUri,
+    username,
+    password,
+  };
 };
+
+export const neo4jConfig = getConfig();

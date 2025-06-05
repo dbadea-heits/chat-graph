@@ -1,11 +1,33 @@
 // API endpoints configuration
 
-export const apiConfig = {
-    baseUrl: process.env.NEXT_API_BASE_URL || "http://localhost:8000",
-    filterGraphEndpoint: process.env.NEXT_FILTER_GRAPH_ENDPOINT || "/filter-graph",
-    updateNeo4jEndpoint: process.env.NEXT_UPDATE_NEO4J_ENDPOINT || "/update-neo4j",
-    jobStatusEndpoint: process.env.NEXT_JOB_STATUS_ENDPOINT || "/job-status",
-    nodeIdsEndpoint: process.env.NEXT_NODE_IDS_ENDPOINT || "/node-ids",
-    askRagEndpoint: process.env.NEXT_ASK_RAG_ENDPOINT || "/ask-rag",
-    
-} as const; 
+const getConfig = () => {
+  const baseUrl = process.env.API_BASE_URL;
+  const filterGraphEndpoint = process.env.FILTER_GRAPH_ENDPOINT;
+  const updateNeo4jEndpoint = process.env.UPDATE_NEO4J_ENDPOINT;
+  const jobStatusEndpoint = process.env.JOB_STATUS_ENDPOINT;
+  const nodeIdsEndpoint = process.env.LIST_IDS_ENDPOINT;
+  const askRagEndpoint = process.env.ASK_RAG_ENDPOINT;
+
+  if (!baseUrl || !filterGraphEndpoint || !updateNeo4jEndpoint || 
+      !jobStatusEndpoint || !nodeIdsEndpoint || !askRagEndpoint) {
+    throw new Error(`Missing required API environment variables: ${[
+      !baseUrl && 'API_BASE_URL',
+      !filterGraphEndpoint && 'FILTER_GRAPH_ENDPOINT',
+      !updateNeo4jEndpoint && 'UPDATE_NEO4J_ENDPOINT',
+      !jobStatusEndpoint && 'JOB_STATUS_ENDPOINT',
+      !nodeIdsEndpoint && 'LIST_IDS_ENDPOINT',
+      !askRagEndpoint && 'ASK_RAG_ENDPOINT'
+    ].filter(Boolean).join(', ')}`);
+  }
+
+  return {
+    baseUrl,
+    filterGraphEndpoint,
+    updateNeo4jEndpoint,
+    jobStatusEndpoint,
+    nodeIdsEndpoint,
+    askRagEndpoint,
+  } as const;
+};
+
+export const apiConfig = getConfig(); 
