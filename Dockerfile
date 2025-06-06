@@ -16,6 +16,18 @@ RUN pnpm install --frozen-lockfile
 # Copy the rest of the application
 COPY . .
 
+ENV API_BASE_URL=http://52.90.62.170:8000
+ENV FILTER_GRAPH_ENDPOINT=/filter-graph
+ENV JOB_STATUS_ENDPOINT=/job-status
+ENV UPDATE_NEO4J_ENDPOINT=/update-neo4j
+ENV ASK_RAG_ENDPOINT=/ask-rag
+ENV LIST_IDS_ENDPOINT=/node-ids
+
+ENV NEO4J_URI=neo4j://52.205.164.222:7687
+ENV NEO4J_HTTP_URI=http://52.205.164.222:7474
+ENV NEO4J_USERNAME=neo4j
+ENV NEO4J_PASSWORD=password
+
 # Build the application
 RUN pnpm build
 
