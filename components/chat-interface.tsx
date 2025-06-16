@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Send, Bot, User, Search, Paperclip, Loader2 } from "lucide-react"
 import { apiConfig } from "@/lib/api-config"
+import ReactMarkdown from "react-markdown"
 
 interface Message {
   id: string
@@ -190,7 +191,9 @@ export default function ChatInterface() {
                       : "bg-slate-700 border border-slate-600 text-slate-100"
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  <div className={`markdown-content text-sm ${message.sender === "user" ? "user-message" : ""}`}>
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
                   <span className="text-xs opacity-70 mt-1 block">{message.timestamp.toLocaleTimeString()}</span>
                 </div>
               </div>
