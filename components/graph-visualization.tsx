@@ -65,6 +65,16 @@ export default function GraphVisualization({
       .attr("stroke", "#0569f4")
       .attr("stroke-width", 6);
 
+    // Add invisible wider lines to increase the clickable area for edges
+    const linkHitArea = svg
+      .append("g")
+      .selectAll("line")
+      .data(edges)
+      .join("line")
+      .attr("stroke", "transparent")
+      .attr("stroke-width", 32) // Much wider than the visible line
+      .style("cursor", "pointer");
+
     // Add link labels
     const linkLabels = svg
       .append("g")
@@ -142,6 +152,12 @@ export default function GraphVisualization({
       setSelected(d);
     });
 
+    // Add click handlers to the wider hit area
+    linkHitArea.on("click", (event, d: any) => {
+      event.stopPropagation();
+      setSelected(d);
+    });
+
     svg.on("click", () => {
       setSelected(null);
     });
@@ -171,6 +187,13 @@ export default function GraphVisualization({
     // Update positions in each tick of the simulation
     simulation.on("tick", () => {
       link
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
+
+      // Update the hit area positions to match the visible lines
+      linkHitArea
         .attr("x1", (d: any) => d.source.x)
         .attr("y1", (d: any) => d.source.y)
         .attr("x2", (d: any) => d.target.x)
@@ -230,13 +253,12 @@ export default function GraphVisualization({
                 >
                   <div className="flex items-center gap-1.5">
                     <div
-                      className="w-2 h-2 rounded-full"
                       style={{
-                        backgroundColor:
-                          COLORS[
-                            nodeTypes.indexOf(selected.type) % COLORS.length
-                          ] ?? "#6B7280",
-                      }}
+                        "--color": COLORS[
+                          nodeTypes.indexOf(selected.type) % COLORS.length
+                        ] ?? "#6B7280",
+                      } as React.CSSProperties}
+                      className="w-2 h-2 rounded-full bg-[var(--color)]"
                     />
                     {selected.type}
                   </div>
