@@ -10,12 +10,16 @@ import { useNeo4jGraph } from "@/hooks/use-neo4j-graph"
 import { apiConfig } from "@/lib/api-config"
 import { COLORS } from "@/constants/colors"
 
-export default function DataVizInterface() {
+interface DataVizInterfaceProps {
+  graphId: string;
+}
+
+export default function DataVizInterface({ graphId }: DataVizInterfaceProps) {
   const { 
     nodes, 
     edges, 
     refreshData: refreshHookData,
-  } = useNeo4jGraph()
+  } = useNeo4jGraph(graphId)
   
   const [selectedNodeTypes, setSelectedNodeTypes] = useState<string[]>([])
   const [filterQuery, setFilterQuery] = useState("")
@@ -93,6 +97,7 @@ export default function DataVizInterface() {
             .then(updateData => {
               console.log("Neo4j update response:", updateData);
               setCurrentStep("Updating Neo4j Graph");
+              // Update the graphId state
               // Refresh the graph data from Neo4j with the new graph_id
               refreshHookData(updateData.graph_id);
             })
@@ -357,6 +362,7 @@ export default function DataVizInterface() {
             nodes={filteredNodes}
             edges={filteredEdges}
             nodeTypes={nodeTypes}
+            graphId={graphId}
           />
 
           {/* Graph Stats */}

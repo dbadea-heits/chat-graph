@@ -13,7 +13,7 @@ interface UseNeo4jGraphResult {
   refreshData: (graphId?: string) => Promise<void>;
 }
 
-export function useNeo4jGraph(): UseNeo4jGraphResult {
+export function useNeo4jGraph(initialGraphId: string = "default"): UseNeo4jGraphResult {
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [d3Data, setD3Data] = useState<{ nodes: any[], edges: any[] }>({ nodes: [], edges: [] });
@@ -21,6 +21,7 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [currentGraphId, setCurrentGraphId] = useState<string>(initialGraphId);
 
   // Connect to Neo4j on component mount
   useEffect(() => {
@@ -54,8 +55,15 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
       setError(null);
       
       try {
-        // Get raw graph data
-        const data = await neo4jService.searchGraph(searchQuery);
+        // If search query is empty, use getGraphData with currentGraphId
+        let data;
+        if (!searchQuery) {
+          data = await neo4jService.getGraphData(currentGraphId);
+        } else {
+          // Otherwise use searchGraph
+          data = await neo4jService.searchGraph(searchQuery);
+        }
+        
         setNodes(data.nodes);
         setEdges(data.edges);
         
@@ -71,10 +79,14 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
     };
 
     fetchData();
-  }, [searchQuery, isConnected]);
+  }, [searchQuery, isConnected, currentGraphId]);
 
   // Function to manually refresh data
   const refreshData = async (graphId?: string) => {
+    if (graphId) {
+      setCurrentGraphId(graphId);
+    }
+    
     if (!isConnected) {
       try {
         await neo4jService.connect();
@@ -91,7 +103,7 @@ export function useNeo4jGraph(): UseNeo4jGraphResult {
     
     try {
       // Get raw graph data
-      const data = await neo4jService.getGraphData(graphId);
+      const data = await neo4jService.getGraphData(graphId || currentGraphId);
       setNodes(data.nodes);
       setEdges(data.edges);
       

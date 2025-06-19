@@ -11,12 +11,14 @@ interface GraphVisualizationProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
   nodeTypes: string[];
+  graphId?: string;
 }
 
 export default function GraphVisualization({
   nodes,
   edges,
   nodeTypes,
+  graphId = "default",
 }: GraphVisualizationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);

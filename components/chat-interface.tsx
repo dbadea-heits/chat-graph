@@ -17,10 +17,14 @@ interface Message {
   timestamp: Date
 }
 
-export default function ChatInterface() {
+interface ChatInterfaceProps {
+  graphId: string;
+  onGraphIdChange: (graphId: string) => void;
+}
+
+export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
-  const [graphId, setGraphId] = useState("default")
   const [nodeIds, setNodeIds] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -31,16 +35,13 @@ export default function ChatInterface() {
         const response = await fetch(`${apiConfig.baseUrl}${apiConfig.nodeIdsEndpoint}`)
         const data = await response.json()
         setNodeIds(data)
-        if (data.length > 0) {
-          setGraphId(data[0])
-        }
       } catch (error) {
         console.error('Error fetching node IDs:', error)
       }
     }
 
     fetchNodeIds()
-  }, [])
+  }, [onGraphIdChange, graphId])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return
@@ -249,7 +250,7 @@ export default function ChatInterface() {
           </div>
 
           <div className="flex items-center justify-between mt-2">
-            <Select value={graphId} onValueChange={setGraphId}>
+            <Select value={graphId} onValueChange={onGraphIdChange}>
               <SelectTrigger className="w-48 h-8 bg-slate-700 border-slate-600 text-slate-200 text-sm">
                 <SelectValue />
               </SelectTrigger>
