@@ -43,6 +43,17 @@ export default function GraphVisualization({
       .attr("style", "max-width: 100%; height: auto;");
 
     svgRef.current = svg.node();
+    
+    // Create a single container for all elements that will be zoomed together
+    const graphContainer = svg.append("g").attr("class", "graph-container");
+
+    // Initialize node positions if they don't exist
+    nodes.forEach((node) => {
+      if (node.x === undefined || node.y === undefined || isNaN(node.x) || isNaN(node.y)) {
+        node.x = width / 2 + (Math.random() - 0.5) * 100;
+        node.y = height / 2 + (Math.random() - 0.5) * 100;
+      }
+    });
 
     // Create a simulation with forces
     const simulation = d3
@@ -59,7 +70,7 @@ export default function GraphVisualization({
       .force("collide", d3.forceCollide().radius(50));
 
     // Add a group for the links
-    const link = svg
+    const link = graphContainer
       .append("g")
       .selectAll("line")
       .data(edges)
@@ -68,7 +79,7 @@ export default function GraphVisualization({
       .attr("stroke-width", 6);
 
     // Add invisible wider lines to increase the clickable area for edges
-    const linkHitArea = svg
+    const linkHitArea = graphContainer
       .append("g")
       .selectAll("line")
       .data(edges)
@@ -78,7 +89,7 @@ export default function GraphVisualization({
       .style("cursor", "pointer");
 
     // Add link labels
-    const linkLabels = svg
+    const linkLabels = graphContainer
       .append("g")
       .selectAll("text")
       .data(edges)
@@ -91,7 +102,7 @@ export default function GraphVisualization({
       .style("pointer-events", "none");
 
     // Add a group for the nodes
-    const node = svg
+    const node = graphContainer
       .append("g")
       .selectAll("circle")
       .data(nodes)
@@ -105,13 +116,14 @@ export default function GraphVisualization({
       .attr("stroke-width", 1.5)
       .style("cursor", "pointer");
 
-    // Add node labels with colored circles
-    const nodeLabels = svg
+    // Add node labels - attach to the graphContainer so they zoom with everything else
+    const nodeLabels = graphContainer
       .append("g")
+      .attr("class", "node-labels")
       .selectAll("g")
       .data(nodes)
       .join("g")
-      .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
+      .attr("transform", (d: any) => `translate(${d.x || 0}, ${d.y || 0})`);
 
     // Add text labels
     nodeLabels
@@ -123,7 +135,7 @@ export default function GraphVisualization({
       .attr("dy", 35)
       .style("pointer-events", "none");
 
-    // Add drag behavior
+    // Add drag behavior with improved label positioning
     const drag = d3
       .drag<SVGCircleElement, GraphNode>()
       .on("start", (event, d: any) => {
@@ -134,6 +146,15 @@ export default function GraphVisualization({
       .on("drag", (event, d: any) => {
         d.fx = event.x;
         d.fy = event.y;
+        
+        // Update actual position immediately during dragging
+        d.x = event.x;
+        d.y = event.y;
+        
+        // Update the corresponding label position during drag
+        nodeLabels
+          .filter((nd: any) => nd.id === d.id)
+          .attr("transform", `translate(${event.x}, ${event.y})`);
       })
       .on("end", (event, d: any) => {
         if (!event.active) simulation.alphaTarget(0);
@@ -169,8 +190,8 @@ export default function GraphVisualization({
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.01, 4])
       .on("zoom", (event) => {
-        const group = svg.selectAll("g");
-        group.attr("transform", event.transform);
+        // Apply the zoom transform only to the graphContainer
+        graphContainer.attr("transform", event.transform);
       });
 
     svg.call(zoom as any);
@@ -188,26 +209,36 @@ export default function GraphVisualization({
 
     // Update positions in each tick of the simulation
     simulation.on("tick", () => {
+      // Helper function to get valid coordinates or defaults
+      const validCoord = (val: any) => !isNaN(val) && val !== undefined ? val : 0;
+      
+      // Update link positions with valid coordinates
       link
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y);
+        .attr("x1", (d: any) => validCoord(d.source.x))
+        .attr("y1", (d: any) => validCoord(d.source.y))
+        .attr("x2", (d: any) => validCoord(d.target.x))
+        .attr("y2", (d: any) => validCoord(d.target.y));
 
-      // Update the hit area positions to match the visible lines
+      // Update the hit area positions with valid coordinates
       linkHitArea
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y);
+        .attr("x1", (d: any) => validCoord(d.source.x))
+        .attr("y1", (d: any) => validCoord(d.source.y))
+        .attr("x2", (d: any) => validCoord(d.target.x))
+        .attr("y2", (d: any) => validCoord(d.target.y));
+      
+      // Update node positions with valid coordinates
+      node.attr("cx", (d: any) => validCoord(d.x))
+          .attr("cy", (d: any) => validCoord(d.y));
 
-      node.attr("cx", (d: any) => d.x).attr("cy", (d: any) => d.y);
+      // Update node label positions with valid coordinates
+      nodeLabels.attr("transform", (d: any) => {
+        return `translate(${validCoord(d.x)}, ${validCoord(d.y)})`;
+      });
 
-      nodeLabels.attr("transform", (d: any) => `translate(${d.x}, ${d.y})`);
-
+      // Update link label positions with valid coordinates
       linkLabels
-        .attr("x", (d: any) => (d.source.x + d.target.x) / 2)
-        .attr("y", (d: any) => (d.source.y + d.target.y) / 2);
+        .attr("x", (d: any) => (validCoord(d.source.x) + validCoord(d.target.x)) / 2)
+        .attr("y", (d: any) => (validCoord(d.source.y) + validCoord(d.target.y)) / 2);
     });
 
     // Handle window resize
