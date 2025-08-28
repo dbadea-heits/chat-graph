@@ -172,14 +172,20 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
               
               // Job completed successfully, update Neo4j with the uploaded file graph
               try {
-                const updateResponse = await fetch(`${apiConfig.baseUrl}${apiConfig.updateNeo4jEndpoint}`, {
+                const updateResponse = await fetch(`${apiConfig.baseUrl}${apiConfig.consolidateNodes}`, {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
                   },
                   body: JSON.stringify({
-                    graph_path: './graphs/uploaded_files',
-                    clear_existing: true
+                    target_skills: 10,
+                    target_objectives: 10,
+                    target_competencies: 10,
+                    target_knowledge: 10,
+                    target_specializations: 10,
+                    graph_id: "uploaded_files",
+                    source_graph_path: "./graphs/uploaded_files",
+                    source_graph_file_name: "graph_chunk_entity_relation.graphml"
                   }),
                 });
                 

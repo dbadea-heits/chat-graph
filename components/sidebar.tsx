@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MessageCircle, BarChart3, Search, Plus, LogIn, Menu } from "lucide-react"
+import { MessageCircle, BarChart3, Search, Plus, LogIn, Menu, GraduationCap } from "lucide-react"
 import { useState } from "react"
 
 interface SidebarProps {
-  activeTab: "chat" | "dataviz"
-  setActiveTab: (tab: "chat" | "dataviz") => void
+  activeTab: "chat" | "dataviz" | "dashboard"
+  setActiveTab: (tab: "chat" | "dataviz" | "dashboard") => void
 }
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
@@ -73,6 +73,19 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             Data Visualization
+          </Button>
+          
+          <Button
+            variant={activeTab === "dashboard" ? "secondary" : "ghost"}
+            className={`w-full justify-start ${
+              activeTab === "dashboard"
+                ? "bg-[#32a852]/20 text-[#32a852] border border-[#32a852]/30"
+                : "text-slate-300 hover:bg-slate-700/50 hover:text-[#32a852]"
+            }`}
+            onClick={() => setActiveTab("dashboard")}
+          >
+            <GraduationCap className="w-4 h-4 mr-2" />
+            Skills Dashboard
           </Button>
 
           <div className="pt-4">

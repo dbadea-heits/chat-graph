@@ -27,8 +27,11 @@ export function useNeo4jGraph(initialGraphId: string = "default"): UseNeo4jGraph
   useEffect(() => {
     const connectToNeo4j = async () => {
       try {
-        await neo4jService.connect();
-        setIsConnected(true);
+        // Only connect if not already connected
+        if (!isConnected) {
+          await neo4jService.connect();
+          setIsConnected(true);
+        }
       } catch (err) {
         setError('Failed to connect to Neo4j database. Please make sure your Neo4j instance is running.');
         console.error('Neo4j connection error:', err);
@@ -40,11 +43,10 @@ export function useNeo4jGraph(initialGraphId: string = "default"): UseNeo4jGraph
 
     // Disconnect when component unmounts
     return () => {
-      neo4jService.disconnect().catch(err => {
-        console.error('Error disconnecting from Neo4j:', err);
-      });
+      // We'll avoid disconnecting on unmount to prevent connection pool issues
+      // The connection will be reused by other components or managed globally
     };
-  }, []);
+  }, [isConnected]);
 
   // Fetch graph data whenever search query changes or connection is established
   useEffect(() => {
@@ -89,6 +91,8 @@ export function useNeo4jGraph(initialGraphId: string = "default"): UseNeo4jGraph
     
     if (!isConnected) {
       try {
+        // Retry connection with a delay to prevent connection pool issues
+        await new Promise(resolve => setTimeout(resolve, 500));
         await neo4jService.connect();
         setIsConnected(true);
       } catch (err) {

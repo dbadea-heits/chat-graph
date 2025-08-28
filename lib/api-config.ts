@@ -4,16 +4,18 @@ const getConfig = () => {
   const baseUrl = process.env.API_BASE_URL;
   const filterGraphEndpoint = process.env.FILTER_GRAPH_ENDPOINT;
   const updateNeo4jEndpoint = process.env.UPDATE_NEO4J_ENDPOINT;
+  const consolidateNodes = process.env.CONSOLIDATE_NODES_ENDPOINT;
   const jobStatusEndpoint = process.env.JOB_STATUS_ENDPOINT;
   const nodeIdsEndpoint = process.env.LIST_IDS_ENDPOINT;
   const askRagEndpoint = process.env.ASK_RAG_ENDPOINT;
 
-  if (!baseUrl || !filterGraphEndpoint || !updateNeo4jEndpoint || 
+  if (!baseUrl || !filterGraphEndpoint || !updateNeo4jEndpoint || !consolidateNodes ||
       !jobStatusEndpoint || !nodeIdsEndpoint || !askRagEndpoint) {
     throw new Error(`Missing required API environment variables: ${[
       !baseUrl && 'API_BASE_URL',
       !filterGraphEndpoint && 'FILTER_GRAPH_ENDPOINT',
       !updateNeo4jEndpoint && 'UPDATE_NEO4J_ENDPOINT',
+      !consolidateNodes && 'CONSOLIDATE_NODES_ENDPOINT',
       !jobStatusEndpoint && 'JOB_STATUS_ENDPOINT',
       !nodeIdsEndpoint && 'LIST_IDS_ENDPOINT',
       !askRagEndpoint && 'ASK_RAG_ENDPOINT'
@@ -24,6 +26,7 @@ const getConfig = () => {
     baseUrl,
     filterGraphEndpoint,
     updateNeo4jEndpoint,
+    consolidateNodes,
     jobStatusEndpoint,
     nodeIdsEndpoint,
     askRagEndpoint,

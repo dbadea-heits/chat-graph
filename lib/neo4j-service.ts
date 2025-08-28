@@ -23,9 +23,31 @@ class Neo4jService {
 
   async connect(): Promise<void> {
     try {
+      // If already connected, don't create a new connection
+      if (this.driver) {
+        try {
+          // Test the existing connection
+          const session = this.driver.session();
+          await session.run('RETURN 1');
+          await session.close();
+          console.log('Using existing Neo4j connection');
+          return;
+        } catch (e) {
+          // If testing the connection fails, close it and create a new one
+          console.log('Existing connection invalid, creating new one');
+          await this.disconnect();
+        }
+      }
+      
+      // Create new connection
       this.driver = neo4j.driver(
         this.uri,
-        neo4j.auth.basic(this.username, this.password)
+        neo4j.auth.basic(this.username, this.password),
+        {
+          // Add connection pool configuration
+          maxConnectionPoolSize: 100,
+          connectionAcquisitionTimeout: 60000
+        }
       );
       
       // Test the connection
@@ -43,13 +65,25 @@ class Neo4jService {
     if (!this.driver) {
       throw new Error('Neo4j driver not initialized. Call connect() first.');
     }
-    return this.driver.session();
+    try {
+      return this.driver.session();
+    } catch (error) {
+      console.error('Error creating Neo4j session:', error);
+      throw new Error('Failed to create Neo4j session: ' + (error as Error).message);
+    }
   }
 
   async disconnect(): Promise<void> {
     if (this.driver) {
-      await this.driver.close();
-      this.driver = null;
+      try {
+        await this.driver.close();
+        this.driver = null;
+        console.log('Neo4j connection closed');
+      } catch (error) {
+        console.error('Error closing Neo4j connection:', error);
+        this.driver = null;
+        throw error;
+      }
     }
   }
 
