@@ -37,7 +37,7 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
     try {
       const response = await fetch(`${apiConfig.baseUrl}${apiConfig.nodeIdsEndpoint}`)
       const data = await response.json()
-      setNodeIds(Object.keys(data))
+      if (data) setNodeIds(Object.keys(data))
     } catch (error) {
       console.error('Error fetching node IDs:', error)
     }
