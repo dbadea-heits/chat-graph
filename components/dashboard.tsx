@@ -42,8 +42,8 @@ const colorMap = {
   proficiencies: "bg-yellow-100 text-yellow-800",
   aptitudes: "bg-purple-100 text-purple-800",
   knowledge: "bg-pink-100 text-pink-800",
-  tools: "bg-blue-100 text-blue-800",
-  unknown: "bg-green-100 text-green-800",
+  tools: "bg-cyan-100 text-cyan-800",
+  unknown: "bg-gray-100 text-gray-800",
 };
 
 const categoryIcons: CategoryIconsType = {
@@ -60,7 +60,7 @@ const SkillCard = ({
   buildsFrom,
 }: SkillCardProps) => {
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg">
+    <Card className="overflow-hidden transition-all hover:shadow-lg h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ const SkillCard = ({
         </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="pb-2">
+      <CardContent className="pb-2 flex-grow">
         {buildsFrom && buildsFrom.length > 0 && (
           <div className="mb-2">
             <p className="text-sm font-medium text-slate-700">Builds from:</p>
@@ -122,6 +122,19 @@ export default function Dashboard({ graphId }: { graphId: string }) {
             <TabsTrigger value="verified">Verified Skills</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           </TabsList>
+          
+          <div className="mb-6 p-4 bg-slate-800/50 rounded-lg">
+            <h3 className="text-sm font-medium text-slate-300 mb-3">Legend: Skill Categories</h3>
+            <div className="flex flex-wrap gap-4">
+              {Object.entries(colorMap).filter(([key]) => key !== 'unknown').map(([key, value]) => (
+                <div key={key} className="flex items-center">
+                  <Badge className={value}>
+                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <TabsContent value="learning-journey">
             <div className="space-y-8">
@@ -135,9 +148,9 @@ export default function Dashboard({ graphId }: { graphId: string }) {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 grid-flow-row-dense">
                 {nodes.filter(node => node.type === 'skills').map((node) => (
-                  <div key={node.id} className="space-y-4">
+                  <div key={node.id} className="flex">
                     <SkillCard
                       description={node.properties.description}
                       key={`${node.label}-${node.properties.displayName}`}
