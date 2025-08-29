@@ -303,7 +303,7 @@ export default function ChatInterface({
                         }`
                       );
                     }
-                  }, 1000);
+                  }, 5000);
                 } else {
                   // No job_id, assume direct processing completed
                   setUploadStatus(
@@ -364,7 +364,7 @@ export default function ChatInterface({
               }`
             );
           }
-        }, 1000);
+        }, 5000);
       } else {
         // No job_id in response, assume direct processing
         setUploadStatus(`File "${file.name}" uploaded successfully!`);
