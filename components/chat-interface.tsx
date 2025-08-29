@@ -1,20 +1,34 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Send, Bot, User, Search, Paperclip, Loader2, Upload } from "lucide-react"
-import { apiConfig } from "@/lib/api-config"
-import ReactMarkdown from "react-markdown"
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Send,
+  Bot,
+  User,
+  Search,
+  Paperclip,
+  Loader2,
+  Upload,
+} from "lucide-react";
+import { apiConfig } from "@/lib/api-config";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
-  id: string
-  content: string
-  sender: "user" | "bot"
-  timestamp: Date
+  id: string;
+  content: string;
+  sender: "user" | "bot";
+  timestamp: Date;
 }
 
 interface ChatInterfaceProps {
@@ -22,205 +36,315 @@ interface ChatInterfaceProps {
   onGraphIdChange: (graphId: string) => void;
 }
 
-export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputValue, setInputValue] = useState("")
-  const [nodeIds, setNodeIds] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+export default function ChatInterface({
+  graphId,
+  onGraphIdChange,
+}: ChatInterfaceProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [nodeIds, setNodeIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Function to fetch node IDs - extracted for reuse
   const fetchNodeIds = async () => {
     try {
-      const response = await fetch(`${apiConfig.baseUrl}${apiConfig.nodeIdsEndpoint}`)
-      const data = await response.json()
-      if (Object.keys(data).length > 0) setNodeIds(Object.keys(data))
+      const response = await fetch(
+        `${apiConfig.baseUrl}${apiConfig.nodeIdsEndpoint}`
+      );
+      const data = await response.json();
+      if (Object.keys(data).length > 0) setNodeIds(Object.keys(data));
     } catch (error) {
-      console.error('Error fetching node IDs:', error)
+      console.error("Error fetching node IDs:", error);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchNodeIds()
-  }, [onGraphIdChange, graphId])
+    fetchNodeIds();
+  }, [onGraphIdChange, graphId]);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return
+    if (!inputValue.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue,
       sender: "user",
       timestamp: new Date(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue("")
-    setIsLoading(true)
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
+    setIsLoading(true);
 
     try {
-      const response = await fetch(`${apiConfig.baseUrl}${apiConfig.askRagEndpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: inputValue,
-          graph_id: graphId
-        })
-      })
+      const response = await fetch(
+        `${apiConfig.baseUrl}${apiConfig.askRagEndpoint}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: inputValue,
+            graph_id: graphId,
+          }),
+        }
+      );
 
-      const data = await response.json()
-      
+      const data = await response.json();
+
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: data.response,
         sender: "bot",
         timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, botResponse])
+      };
+      setMessages((prev) => [...prev, botResponse]);
     } catch (error) {
-      console.error('Error fetching response:', error)
+      console.error("Error fetching response:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "Sorry, I encountered an error while processing your request.",
         sender: "bot",
         timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const generateBotResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase()
+    const input = userInput.toLowerCase();
 
-    if (input.includes("graph") || input.includes("node") || input.includes("relationship")) {
-      return "I can see you're interested in graph data! Check out the Data Visualization tab to explore the Neo4j graph with interactive nodes and relationships. You can search and filter the data there."
+    if (
+      input.includes("graph") ||
+      input.includes("node") ||
+      input.includes("relationship")
+    ) {
+      return "I can see you're interested in graph data! Check out the Data Visualization tab to explore the Neo4j graph with interactive nodes and relationships. You can search and filter the data there.";
     }
 
     if (input.includes("search") || input.includes("filter")) {
-      return "You can use the search functionality in the Data Visualization tab to filter nodes by type, properties, or relationships. Try searching for specific node labels or property values."
+      return "You can use the search functionality in the Data Visualization tab to filter nodes by type, properties, or relationships. Try searching for specific node labels or property values.";
     }
 
     if (input.includes("neo4j") || input.includes("bloom")) {
-      return "Filter and explore your AI's knowledge base."
+      return "Filter and explore your AI's knowledge base.";
     }
 
-    return "That's interesting! I can help you with graph data queries and visualization. Try switching to the Data Visualization tab to explore the interactive graph."
-  }
+    return "That's interesting! I can help you with graph data queries and visualization. Try switching to the Data Visualization tab to explore the interactive graph.";
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setIsUploading(true)
-    setUploadStatus("Uploading file...")
+    setIsUploading(true);
+    setUploadStatus("Uploading file...");
 
     // Variable for the polling interval that needs to be accessible in the finally block
     let pollInterval: NodeJS.Timeout;
     let isPolling = false;
-    
+
     try {
       // Create FormData object for proper multipart/form-data handling
-      const formData = new FormData()
-      formData.append('file', file)
-      
+      const formData = new FormData();
+      formData.append("file", file);
+
       // Send the file to the API using FormData
       const response = await fetch(`${apiConfig.baseUrl}/upload-file`, {
-        method: 'POST',
+        method: "POST",
         // Don't set Content-Type header - fetch will set it automatically with the correct boundary
-        body: formData
-      })
+        body: formData,
+      });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`)
+        throw new Error(`Upload failed: ${response.statusText}`);
       }
 
-      const data = await response.json()
-      
+      const data = await response.json();
+
       if (data.job_id) {
-        setUploadStatus(`Processing file "${file.name}"...`)
-        
+        setUploadStatus(`Processing file "${file.name}"...`);
+
         // Poll for job status
         isPolling = true;
         let progress = 0;
         let currentStep = "Processing";
         pollInterval = setInterval(async () => {
           try {
-            const statusResponse = await fetch(`${apiConfig.baseUrl}${apiConfig.jobStatusEndpoint}/${data.job_id}`);
+            const statusResponse = await fetch(
+              `${apiConfig.baseUrl}${apiConfig.jobStatusEndpoint}/${data.job_id}`
+            );
             const statusData = await statusResponse.json();
-            
+
             if (statusData.status === "failed") {
               clearInterval(pollInterval);
               isPolling = false;
-              setUploadStatus(`Processing failed: ${statusData.error || "Unknown error"}`);
+              setUploadStatus(
+                `Processing failed: ${statusData.error || "Unknown error"}`
+              );
               return;
             }
-            
+
             progress = statusData.progress;
             currentStep = statusData.current_step || "Processing";
             setUploadStatus(`${currentStep} (${Math.round(progress * 100)}%)`);
-            
+
             if (progress === 1) {
               clearInterval(pollInterval);
               isPolling = false;
-              
+
               // Job completed successfully, update Neo4j with the uploaded file graph
               try {
-                const updateResponse = await fetch(`${apiConfig.baseUrl}${apiConfig.consolidateNodes}`, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    target_skills: 10,
-                    target_objectives: 10,
-                    target_competencies: 10,
-                    target_knowledge: 10,
-                    target_specializations: 10,
-                    graph_id: "uploaded_files",
-                    source_graph_path: "./graphs/uploaded_files",
-                    source_graph_file_name: "graph_chunk_entity_relation.graphml"
-                  }),
-                });
-                
+                setUploadStatus(
+                  `Processing file "${file.name}" - Consolidating nodes...`
+                );
+                const updateResponse = await fetch(
+                  `${apiConfig.baseUrl}${apiConfig.consolidateNodes}`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      target_skills: 10,
+                      target_objectives: 10,
+                      target_competencies: 10,
+                      target_knowledge: 10,
+                      target_specializations: 10,
+                      graph_id: "uploaded_files",
+                      source_graph_path: "./graphs/uploaded_files",
+                      source_graph_file_name:
+                        "graph_chunk_entity_relation.graphml",
+                    }),
+                  }
+                );
+
                 const updateData = await updateResponse.json();
-                setUploadStatus(`File "${file.name}" processed and loaded into graph!`);
-                
-                // Refresh the list of graphIds
-                await fetchNodeIds();
-                
-                // If the response includes a new graph_id, select it
-                if (updateData.graph_id) {
-                  onGraphIdChange(updateData.graph_id);
+
+                // Check if the consolidation process is asynchronous with a job_id
+                if (updateData.job_id) {
+                  setUploadStatus(`Consolidating nodes (0%)...`);
+
+                  // Poll for consolidation job status
+                  const consolidationInterval = setInterval(async () => {
+                    try {
+                      const statusResponse = await fetch(
+                        `${apiConfig.baseUrl}${apiConfig.jobStatusEndpoint}/${updateData.job_id}`
+                      );
+                      const statusData = await statusResponse.json();
+
+                      if (statusData.status === "failed") {
+                        clearInterval(consolidationInterval);
+                        setUploadStatus(
+                          `Consolidation failed: ${
+                            statusData.error || "Unknown error"
+                          }`
+                        );
+                        return;
+                      }
+
+                      const progress = statusData.progress;
+                      const currentStep =
+                        statusData.current_step || "Consolidating";
+                      setUploadStatus(
+                        `${currentStep} (${Math.round(progress * 100)}%)`
+                      );
+
+                      if (progress === 1) {
+                        clearInterval(consolidationInterval);
+                        setUploadStatus(
+                          `File "${file.name}" processed and loaded into graph!`
+                        );
+
+                        // Refresh the list of graphIds
+                        await fetchNodeIds();
+
+                        // Add system message about the successful processing
+                        const systemMessage: Message = {
+                          id: Date.now().toString(),
+                          content: `File "${file.name}" has been uploaded, processed, and loaded into the knowledge graph.`,
+                          sender: "bot",
+                          timestamp: new Date(),
+                        };
+                        setMessages((prev) => [...prev, systemMessage]);
+
+                        // Reset upload state after a delay
+                        setTimeout(() => {
+                          setIsUploading(false);
+                          // Clear status after additional delay
+                          setTimeout(() => {
+                            setUploadStatus(null);
+                          }, 3000);
+                        }, 1000);
+
+                        // If the response includes a new graph_id, select it
+                        if (updateData.graph_id || statusData.graph_id) {
+                          onGraphIdChange(
+                            updateData.graph_id || statusData.graph_id
+                          );
+                        }
+                      }
+                    } catch (pollError) {
+                      console.error(
+                        "Error polling consolidation status:",
+                        pollError
+                      );
+                      clearInterval(consolidationInterval);
+                      setUploadStatus(
+                        `Error checking consolidation status: ${
+                          (pollError as Error).message
+                        }`
+                      );
+                    }
+                  }, 1000);
+                } else {
+                  // No job_id, assume direct processing completed
+                  setUploadStatus(
+                    `File "${file.name}" processed and loaded into graph!`
+                  );
+
+                  // Refresh the list of graphIds
+                  await fetchNodeIds();
+
+                  // If the response includes a new graph_id, select it
+                  if (updateData.graph_id) {
+                    onGraphIdChange(updateData.graph_id);
+                  }
                 }
-                
-                // Add system message about the successful processing
-                const systemMessage: Message = {
-                  id: Date.now().toString(),
-                  content: `File "${file.name}" has been uploaded, processed, and loaded into the knowledge graph.`,
-                  sender: "bot",
-                  timestamp: new Date(),
-                };
-                setMessages((prev) => [...prev, systemMessage]);
-                
-                // Reset upload state after a delay
-                setTimeout(() => {
-                  setIsUploading(false);
-                  // Clear status after additional delay
-                  setTimeout(() => {
-                    setUploadStatus(null);
-                  }, 3000);
-                }, 1000);
+
+                // // Reset upload state after a delay
+                // setTimeout(() => {
+                //   setIsUploading(false);
+                //   // Clear status after additional delay
+                //   setTimeout(() => {
+                //     setUploadStatus(null);
+                //   }, 3000);
+                // }, 1000);
               } catch (updateError) {
-                console.error('Error updating Neo4j:', updateError);
-                setUploadStatus(`File processed but graph update failed: ${(updateError as Error).message}`);
-                
+                console.error("Error updating Neo4j:", updateError);
+
+                // Different error message based on what stage we're in
+                let errorMessage = `File processed but graph update failed: ${
+                  (updateError as Error).message
+                }`;
+
+                // If we can extract more specific error information
+                if (
+                  updateError instanceof Error &&
+                  updateError.message.includes("job_id")
+                ) {
+                  errorMessage = `Error starting consolidation process: ${updateError.message}`;
+                }
+
+                setUploadStatus(errorMessage);
+
                 const systemMessage: Message = {
                   id: Date.now().toString(),
                   content: `File "${file.name}" was processed but couldn't be loaded into the graph.`,
@@ -228,28 +352,23 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
                   timestamp: new Date(),
                 };
                 setMessages((prev) => [...prev, systemMessage]);
-                
-                // Reset upload state after a delay
-                setTimeout(() => {
-                  setIsUploading(false);
-                  // Clear status after additional delay
-                  setTimeout(() => {
-                    setUploadStatus(null);
-                  }, 3000);
-                }, 1000);
               }
             }
           } catch (pollError) {
-            console.error('Error polling job status:', pollError);
+            console.error("Error polling job status:", pollError);
             clearInterval(pollInterval);
             isPolling = false;
-            setUploadStatus(`Error checking processing status: ${(pollError as Error).message}`);
+            setUploadStatus(
+              `Error checking processing status: ${
+                (pollError as Error).message
+              }`
+            );
           }
         }, 1000);
       } else {
         // No job_id in response, assume direct processing
         setUploadStatus(`File "${file.name}" uploaded successfully!`);
-        
+
         // Add system message about the upload
         const systemMessage: Message = {
           id: Date.now().toString(),
@@ -257,52 +376,55 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
           sender: "bot",
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, systemMessage])
+        setMessages((prev) => [...prev, systemMessage]);
       }
-      
     } catch (error) {
-      console.error('Error uploading file:', error)
-      setUploadStatus(`Upload failed: ${(error as Error).message}`)
+      console.error("Error uploading file:", error);
+      setUploadStatus(`Upload failed: ${(error as Error).message}`);
     } finally {
       // Clear file input value to ensure onChange fires even if the same file is selected
       if (fileInputRef.current) {
-        fileInputRef.current.value = ""
+        fileInputRef.current.value = "";
       }
-      
+
       // Only reset the UI if we're not still polling for job status
       if (!isPolling) {
         setTimeout(() => {
-          setIsUploading(false)
+          setIsUploading(false);
           // Clear status after a delay
           setTimeout(() => {
-            setUploadStatus(null)
-          }, 3000)
-        }, 1000)
+            setUploadStatus(null);
+          }, 3000);
+        }, 1000);
       }
     }
-  }
+  };
 
   const triggerFileUpload = () => {
     // Ensure the input is cleared before triggering the click
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-      fileInputRef.current.click()
+      fileInputRef.current.value = "";
+      fileInputRef.current.click();
     }
-  }
+  };
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages])
+  }, [messages]);
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-800/50">
         <div>
-          <h2 className="text-lg font-semibold text-slate-100">Chat Interface</h2>
-          <p className="text-sm text-slate-400">AI-powered conversations with graph data insights</p>
+          <h2 className="text-lg font-semibold text-slate-100">
+            Chat Interface
+          </h2>
+          <p className="text-sm text-slate-400">
+            AI-powered conversations with graph data insights
+          </p>
         </div>
       </div>
 
@@ -310,37 +432,67 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
       {messages.length === 0 && (
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="max-w-2xl text-center space-y-6">
-            <h1 className="text-3xl font-bold text-slate-100">Welcome to The Brain Builder</h1>
+            <h1 className="text-3xl font-bold text-slate-100">
+              Welcome to The Brain Builder
+            </h1>
 
             <div className="space-y-4 text-left">
               <div>
-                <h3 className="text-lg font-semibold text-slate-200 mb-2">1. Your Personal Knowledge Base</h3>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">
+                  1. Your Personal Knowledge Base
+                </h3>
                 <p className="text-slate-400">
-                  Starting with philosophy, access a comprehensive collection of concepts, thinkers, and ideas across multiple domains, all organized in an interactive graph database. Perfect for building engaging curriculum materials.
+                  Starting with philosophy, access a comprehensive collection of
+                  concepts, thinkers, and ideas across multiple domains, all
+                  organized in an interactive graph database. Perfect for
+                  building engaging curriculum materials.
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-slate-200 mb-2">2. AI-Powered Course Design</h3>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">
+                  2. AI-Powered Course Design
+                </h3>
                 <p className="text-slate-400">
-                  Let our advanced AI help you create <span className="font-medium text-[#9e58bd]">engaging lesson plans</span>, 
-                  <span className="font-medium text-[#00828e]"> interactive discussions</span>, and 
-                  <span className="font-medium text-[#9e58bd]"> thought-provoking assignments</span> tailored to your students' needs.
+                  Let our advanced AI help you create{" "}
+                  <span className="font-medium text-[#9e58bd]">
+                    engaging lesson plans
+                  </span>
+                  ,
+                  <span className="font-medium text-[#00828e]">
+                    {" "}
+                    interactive discussions
+                  </span>
+                  , and
+                  <span className="font-medium text-[#9e58bd]">
+                    {" "}
+                    thought-provoking assignments
+                  </span>{" "}
+                  tailored to your students' needs.
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-slate-200 mb-2">3. Customizable Learning Paths</h3>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">
+                  3. Customizable Learning Paths
+                </h3>
                 <p className="text-slate-400">
-                  Filter and customize the knowledge base to match your curriculum requirements. Create unique learning journeys that connect concepts across different domains in meaningful ways for your students.
+                  Filter and customize the knowledge base to match your
+                  curriculum requirements. Create unique learning journeys that
+                  connect concepts across different domains in meaningful ways
+                  for your students.
                 </p>
               </div>
             </div>
 
             <div className="pt-4">
-              <h3 className="text-lg font-semibold text-[#4f46e5] mb-2">Ready to Transform Your Teaching?</h3>
+              <h3 className="text-lg font-semibold text-[#4f46e5] mb-2">
+                Ready to Transform Your Teaching?
+              </h3>
               <p className="text-slate-600">
-                Start a conversation with our AI assistant to explore your knowledge base, or use the graph visualization to discover connections between concepts. You can also{" "}
+                Start a conversation with our AI assistant to explore your
+                knowledge base, or use the graph visualization to discover
+                connections between concepts. You can also{" "}
                 <span className="text-[#3b82f6] font-medium cursor-pointer hover:text-[#2563eb]">
                   explore our teaching resources
                 </span>
@@ -358,11 +510,23 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-start gap-3 ${message.sender === "user" ? "flex-row-reverse" : ""}`}
+                className={`flex items-start gap-3 ${
+                  message.sender === "user" ? "flex-row-reverse" : ""
+                }`}
               >
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className={message.sender === "user" ? "bg-[#9e58bd]" : "bg-[#00828e]"}>
-                    {message.sender === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                  <AvatarFallback
+                    className={
+                      message.sender === "user"
+                        ? "bg-[#9e58bd]"
+                        : "bg-[#00828e]"
+                    }
+                  >
+                    {message.sender === "user" ? (
+                      <User className="w-4 h-4" />
+                    ) : (
+                      <Bot className="w-4 h-4" />
+                    )}
                   </AvatarFallback>
                 </Avatar>
                 <div
@@ -372,10 +536,16 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
                       : "bg-slate-700 border border-slate-600 text-slate-100"
                   }`}
                 >
-                  <div className={`markdown-content text-sm ${message.sender === "user" ? "user-message" : ""}`}>
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                  <div
+                    className={`markdown-content text-sm ${
+                      message.sender === "user" ? "user-message" : ""
+                    }`}
+                  >
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
-                  <span className="text-xs opacity-70 mt-1 block">{message.timestamp.toLocaleTimeString()}</span>
+                  <span className="text-xs opacity-70 mt-1 block">
+                    {message.timestamp.toLocaleTimeString()}
+                  </span>
                 </div>
               </div>
             ))}
@@ -403,11 +573,11 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center">
-              <Button 
+              <Button
                 onClick={triggerFileUpload}
-                disabled={isUploading} 
-                variant="outline" 
-                size="sm" 
+                disabled={isUploading}
+                variant="outline"
+                size="sm"
                 className="flex items-center gap-1 bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
               >
                 {isUploading ? (
@@ -425,20 +595,32 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
               />
             </div>
             {uploadStatus && (
-              <span className={`text-xs ${uploadStatus.includes('failed') ? 'text-red-400' : 'text-green-400'}`}>
+              <span
+                className={`text-xs ${
+                  uploadStatus.includes("failed")
+                    ? "text-red-400"
+                    : "text-green-400"
+                }`}
+              >
                 {uploadStatus}
               </span>
             )}
           </div>
         </div>
       </div>
-      
+
       {/* Input Area */}
       <div className="p-4 border-t border-slate-700 bg-slate-800/50">
         <div className="max-w-4xl mx-auto">
           <div className="mb-2 text-xs text-slate-500 text-center">
-            Make sure you agree to our <span className="text-[#9e58bd] cursor-pointer hover:text-[#b06bd1]">Terms</span>{" "}
-            and our <span className="text-[#9e58bd] cursor-pointer hover:text-[#b06bd1]">Privacy Policy</span>
+            Make sure you agree to our{" "}
+            <span className="text-[#9e58bd] cursor-pointer hover:text-[#b06bd1]">
+              Terms
+            </span>{" "}
+            and our{" "}
+            <span className="text-[#9e58bd] cursor-pointer hover:text-[#b06bd1]">
+              Privacy Policy
+            </span>
           </div>
 
           <div className="relative">
@@ -451,7 +633,11 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
             />
 
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-[#9e58bd]">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-slate-400 hover:text-[#9e58bd]"
+              >
                 <Paperclip className="w-4 h-4" />
               </Button>
               <Button
@@ -471,14 +657,22 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
                 {nodeIds.map((nodeId) => (
-                  <SelectItem key={nodeId} value={nodeId} className="text-slate-200 focus:bg-slate-600">
+                  <SelectItem
+                    key={nodeId}
+                    value={nodeId}
+                    className="text-slate-200 focus:bg-slate-600"
+                  >
                     {nodeId}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-[#00828e]">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-[#00828e]"
+            >
               <Search className="w-4 h-4 mr-1" />
               Search
             </Button>
@@ -486,5 +680,5 @@ export default function ChatInterface({ graphId, onGraphIdChange }: ChatInterfac
         </div>
       </div>
     </div>
-  )
+  );
 }
