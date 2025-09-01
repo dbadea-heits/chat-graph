@@ -36,13 +36,13 @@ type CategoryIconsType = {
   [key: string]: ReactNode;
 };
 
-const colorMap = {
+const colorMap: {[key: string]: string} = {
   skills: "bg-blue-100 text-blue-800",
   competencies: "bg-green-100 text-green-800",
   proficiencies: "bg-yellow-100 text-yellow-800",
-  aptitudes: "bg-purple-100 text-purple-800",
+  specializations: "bg-purple-100 text-purple-800",
   knowledge: "bg-pink-100 text-pink-800",
-  tools: "bg-cyan-100 text-cyan-800",
+  objectives: "bg-cyan-100 text-cyan-800",
   unknown: "bg-gray-100 text-gray-800",
 };
 
@@ -101,8 +101,7 @@ const SkillCard = ({
 };
 
 export default function Dashboard({ graphId }: { graphId: string }) {
-  const { nodes, edges, refreshData: refreshHookData } = useNeo4jGraph(graphId);
-  const [activeTab, setActiveTab] = useState("learning-journey");
+  const { nodes, edges } = useNeo4jGraph(graphId);
 
   return (
     <div className="flex-1 p-6 bg-slate-50/5 overflow-y-auto">
@@ -124,15 +123,20 @@ export default function Dashboard({ graphId }: { graphId: string }) {
           </TabsList>
           
           <div className="mb-6 p-4 bg-slate-800/50 rounded-lg">
-            <h3 className="text-sm font-medium text-slate-300 mb-3">Legend: Skill Categories</h3>
+            <h3 className="text-sm font-medium text-slate-300 mb-3">Legend: Node Types</h3>
             <div className="flex flex-wrap gap-4">
-              {Object.entries(colorMap).filter(([key]) => key !== 'unknown').map(([key, value]) => (
-                <div key={key} className="flex items-center">
-                  <Badge className={value}>
-                    {key.charAt(0).toUpperCase() + key.slice(1)}
-                  </Badge>
-                </div>
-              ))}
+              {/* Extract unique node types from nodes array */}
+              {Array.from(new Set(nodes.map(node => node.type)))
+                .filter(type => type !== undefined && type !== '')
+                .sort()
+                .map(type => (
+                  <div key={type} className="flex items-center">
+                    <Badge className={colorMap[type as keyof typeof colorMap] || colorMap.unknown}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Badge>
+                  </div>
+                ))
+              }
             </div>
           </div>
 
@@ -155,8 +159,16 @@ export default function Dashboard({ graphId }: { graphId: string }) {
                       description={node.properties.description}
                       key={`${node.label}-${node.properties.displayName}`}
                       title={node.properties.displayName}
-                      supports={edges.filter(edge => edge.source === node.id).map(edge => nodes.find(n => n.id === edge.target))}
-                      buildsFrom={edges.filter(edge => edge.target === node.id).map(edge => nodes.find(n => n.id === edge.source))}
+                      supports={edges
+                        .filter(edge => (edge.source as unknown as string) === node.id)
+                        .map(edge => nodes.find(n => n.id === (edge.target as unknown as string)))
+                        .filter((n): n is GraphNode => n !== undefined)
+                      }
+                      buildsFrom={edges
+                        .filter(edge => (edge.target as unknown as string) === node.id)
+                        .map(edge => nodes.find(n => n.id === (edge.source as unknown as string)))
+                        .filter((n): n is GraphNode => n !== undefined)
+                      }
                       category={node.properties.category}
                     />
                   </div>
