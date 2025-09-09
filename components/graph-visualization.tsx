@@ -299,13 +299,13 @@ export default function GraphVisualization({
               </div>
               <hr className="border-slate-600" />
               {Object.entries(selected.properties).map(([key, value]) => (
-                <>
-                  <div key={key} className="flex gap-4 justify-between text-sm">
+                <div key={key}>
+                  <div className="flex gap-4 justify-between text-sm">
                     <span className="text-slate-400">{key}:</span>
                     <span className="text-slate-200">{value}</span>
                   </div>
                   <hr className="border-slate-600" />
-                </>
+                </div>
               ))}
               {(selected as GraphEdge).source?.label && (selected as GraphEdge).target?.label && (
                 <>
