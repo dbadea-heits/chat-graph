@@ -14,7 +14,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
   return (
-    <div className="w-64 bg-slate-800/90 backdrop-blur-sm border-r border-slate-700 flex flex-col">
+    <div className="w-64 fixed h-full bg-slate-800/90 backdrop-blur-sm border-r border-slate-700 flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-slate-700">
         <div className="flex items-center gap-2 mb-4">
