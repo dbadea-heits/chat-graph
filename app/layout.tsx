@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'The Brain Builder',
-  description: 'A Neo4j Graph Chat Application',
+  title: 'Knowledge Graph',
+  description: 'A skill extractor that you can question',
   generator: 'heits.digital',
 }
 

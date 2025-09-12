@@ -19,7 +19,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       <div className="p-4 border-b border-slate-700">
         <div className="flex items-center gap-2 mb-4">
           {/* <Menu className="w-5 h-5 text-[#9e58bd]" /> */}
-          <h1 className="text-xl font-bold text-[#9e58bd]">✨ The Brain Builder ✨</h1>
+          <h1 className="text-xl font-bold text-[#9e58bd]">Knowledge Graph</h1>
         </div>
 
         <Button

@@ -433,7 +433,7 @@ export default function ChatInterface({
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="max-w-2xl text-center space-y-6">
             <h1 className="text-3xl font-bold text-slate-100">
-              Welcome to The Brain Builder
+              Welcome to Knowledge Graphs
             </h1>
 
             <div className="space-y-4 text-left">
